@@ -48,11 +48,11 @@ int main(int argc, char* argv[])
                 if (operations == 0) {
                     putc('0', stdout);
                 } else {
-                    char pos = OUTPUT_LENGTH - 1;
+                    char pos = OUTPUT_LENGTH;
                     while (operations != 0) {
                         char rem = operations % 10;
                         operations = operations/10;
-                        outputbuffer[pos--] = rem + '0';
+                        outputbuffer[--pos] = rem + '0';
                     }
                     for (char p = pos; p < OUTPUT_LENGTH; p++ ) {
                         putc(outputbuffer[p], stdout);
