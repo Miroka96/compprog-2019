@@ -27,15 +27,15 @@ int c;
 bool negative_input;
 // read a number from stdin into var
 #define readn(var)  var = 0;                                \
-                    c = fgetc(stdin);                       \
+                    c = getchar_unlocked();                 \
                     if (c == '-') {                         \
                         negative_input = true;              \
-                        c = fgetc(stdin);                   \
+                        c = getchar_unlocked();             \
                     } else negative_input = false;          \
                     while (true) {                          \
                         if (c < '0') break;                 \
                         var = var * 10 + (c - '0');         \
-                        c = fgetc(stdin);                   \
+                        c = getchar_unlocked();             \
                     }                                       \
                     if (negative_input) var = -var;         \
                     debug(var);
@@ -79,6 +79,7 @@ private:
 struct Vertex {
     short elevation;
     tVertex* parent;
+    int rank;
 
 // disable the following for e.g. sorting
     Vertex() {};
@@ -96,20 +97,34 @@ private:
                                 debug(pvertex->elevation);                                          \
                                 debug(pvertex->parent);
 
-// get the set of a vertex by following its parents
-#define getSet(pvertex)         while(pvertex != pvertex->parent) {                                 \
-                                    debugVertex(pvertex); pvertex = pvertex->parent;                \
-                                }
+#define makeSet(pvertex)        pvertex->parent = pvertex;                                          \
+                                pvertex->rank = 0;
 
-// make set_a a subset of set_b and update the whole hierarchy to set_b as parent, starting at pvertex_upd
-#define joinSets(pvertex_a, pvertex_b, pvertex_upd)     tVertex *bufferSet;                         \
-                                                        pvertex_a->parent = pvertex_b;              \
-                                                        pvertex_a = pvertex_upd;                    \
-                                                        while (pvertex_a->parent != pvertex_b) {    \
-                                                            bufferSet = pvertex_a;                  \
-                                                            pvertex_a = pvertex_a->parent;          \
-                                                            bufferSet->parent = pvertex_b;          \
+tVertex *bufferVertex;
+
+// update the whole hierarchy (reset parent)
+#define compressSet(pvertex_initial, pvertex_parent)    while (pvertex_initial->parent != pvertex_parent) { \
+                                                                bufferVertex = pvertex_initial;             \
+                                                                pvertex_initial = pvertex_initial->parent;  \
+                                                                bufferVertex->parent = pvertex_parent;      \
                                                         }
+
+// get the set of a vertex by following its parents and compress the set structure
+#define findSet(pvertex)        bufferVertex = pvertex;                                             \
+                                while(pvertex != pvertex->parent) {                                 \
+                                    debugVertex(pvertex); pvertex = pvertex->parent;                \
+                                }                                                                   \
+                                compressSet(bufferVertex, pvertex);
+
+// make set_a a subset of set_b
+#define unionSetAWithB(pvertex_a, pvertex_b)   pvertex_a->parent = pvertex_b;
+                                                            
+// make the less high set a subset of the higher set
+#define unionSets(pvertex_a, pvertex_b, pvertex_a_upd, pvertex_b_upd)   if (pvertex_a->rank <= pvertex_b->rank) {   \
+                                                                            unionSetAWithB(pvertex_a, pvertex_b);   \
+                                                                        } else {                                    \
+                                                                            unionSetAWithB(pvertex_b, pvertex_a);   \
+                                                                        }
 
 struct Graph {
     tVertex* vertices;
@@ -153,7 +168,7 @@ int main(int argc, char* argv[]) {
         readn(elevation);
         tVertex *pvertex = &graph.vertices[city];
         pvertex->elevation = elevation;
-        pvertex->parent = pvertex;
+        makeSet(pvertex);
         debugVertex(pvertex);
     }
     
@@ -186,14 +201,14 @@ int main(int argc, char* argv[]) {
         debugEdge(edge);
         
         startSet = edge->vertices[0];
-        getSet(startSet);
+        findSet(startSet);
         
         endSet = edge->vertices[1];
-        getSet(endSet);
+        findSet(endSet);
 
         if (startSet != endSet) {
             accumulatedWeight += edge->weight;
-            joinSets(startSet, endSet, edge->vertices[0]);
+            unionSets(startSet, endSet, edge->vertices[0], edge->vertices[1]);
         }
     }
 
