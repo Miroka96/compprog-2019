@@ -1,5 +1,4 @@
-#include <stdio.h>
-#include <stdbool.h>
+#include <bits/stdc++.h>
 
 #define BASE 10
 #define OUTPUT_LENGTH 10
