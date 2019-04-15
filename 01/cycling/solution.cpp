@@ -88,6 +88,22 @@ private:
     Vertex(const Vertex&); // non-copyable, C++98 style
 };
 
+struct Graph {
+    tVertex* vertices;
+    tEdge* edges;
+};
+
+#define debugGraph(g, vertexc, edgec)   rep(v, vertexc) {                                           \
+                                            tVertex* pvertex = &g.vertices[v];                      \
+                                            debugVertex(pvertex);                                   \
+                                        }                                                           \
+                                        rep(e, edgec) {                                             \
+                                            tEdge* pedge = &g.edges[e];                             \
+                                            debugEdge(pedge);                                       \
+                                        }
+
+tGraph graph;
+
 #define debugEdge(pedge)        debug(pedge);                                                       \
                                 debug(pedge->weight);                                               \
                                 debugVertex(pedge->vertices[0]);                                    \
@@ -126,22 +142,6 @@ tVertex *bufferVertex;
                                                                             unionSetAWithB(pvertex_b, pvertex_a);   \
                                                                         }
 
-struct Graph {
-    tVertex* vertices;
-    tEdge* edges;
-};
-
-#define debugGraph(g, vertexc, edgec)   rep(v, vertexc) {                                           \
-                                            tVertex* pvertex = &g.vertices[v];                      \
-                                            debugVertex(pvertex);                                   \
-                                        }                                                           \
-                                        rep(e, edgec) {                                             \
-                                            tEdge* pedge = &g.edges[e];                             \
-                                            debugEdge(pedge);                                       \
-                                        }
-
-tGraph graph;
-
 // sort edges ascending
 // example usage: sort(graph.edges, graph.edges + pathsc, EdgeWeightSorter);
 bool EdgeWeightSorter(const tEdge& a, const tEdge& b) { return a.weight < b.weight; }
@@ -155,7 +155,6 @@ int main(int argc, char* argv[]) {
     setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
 
     short citiesc;
-
     readn(citiesc);
     graph.vertices = new tVertex[citiesc];
 
