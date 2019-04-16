@@ -65,10 +65,6 @@ template<typename T> inline void write(T n)
 
 ////////////////////////////// Task ////////////////////////
 
-//#define MAX_VALUE 1000000008
-
-//bitset<MAX_VALUE> bloomfilter;
-
 int main(int argc, char* argv[]) {
     setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
 

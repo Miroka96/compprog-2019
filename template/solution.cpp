@@ -3,9 +3,9 @@
 ////////////////////////////// Helper //////////////////////
 
 // disable debugging for submission
-#define debug(x)    x
+//#define debug(x)    x
 // print value of debug variable
-//#define debug(x)    clog << #x << " = " << x << endl
+#define debug(x)    clog << #x << " = " << x << endl
 
 // print a debug string
 #define debugs(str) //clog << str << endl
@@ -17,47 +17,48 @@ using namespace std;
 
 ////////////////////////////// I/O /////////////////////////
 #define BASE 10
-#define OUTPUT_LENGTH 10
+#define OUTPUT_LENGTH 24
 #define BUFFER_SIZE 1024
 
 // buffer stdin
 char inputbuffer[BUFFER_SIZE];
 
-int c;
-bool negative_input;
-// read a number from stdin into var
-#define readn(var)  var = 0;                                \
-                    c = getchar_unlocked();                 \
-                    if (c == '-') {                         \
-                        negative_input = true;              \
-                        c = getchar_unlocked();             \
-                    } else negative_input = false;          \
-                    while (true) {                          \
-                        if (c < '0') break;                 \
-                        var = var * 10 + (c - '0');         \
-                        c = getchar_unlocked();             \
-                    }                                       \
-                    if (negative_input) var = -var;         \
-                    debug(var);
+template<typename T> inline void readn(T &x) 
+{ 
+    x = 0; 
+    bool neg = 0; 
+    register T c = getchar_unlocked(); 
+  
+    if (c == '-') 
+        neg = 1, c = getchar_unlocked(); 
+  
+    for ( ; c >= '0' && c <= '9'; c = getchar_unlocked() ) 
+        x = (x << 3) + ( x << 1 ) + ( c & 15 ); 
+  
+    if (neg) x *= -1; 
+} 
 
 // create output buffer
 char outputbuffer[OUTPUT_LENGTH];
 
-// write var as number to stdout
-#define write(var) if (var == 0) { \
-    putc('0', stdout); \
-    }else{ \
-    char pos = OUTPUT_LENGTH; \
-    while (var != 0) { \
-        char rem = var % BASE; \
-        var = var/BASE; \
-        outputbuffer[--pos] = rem + '0'; \
-    } \
-    for (char p = pos; p < OUTPUT_LENGTH; p++ ) { \
-        putc(outputbuffer[p], stdout); \
-    } \
-}   \
-putc('\n', stdout);
+template<typename T> inline void write(T n) 
+{ 
+    bool neg = 0; 
+    if (n < 0) n *= -1, neg = 1; 
+  
+    int i = 0; 
+    do { 
+        outputbuffer[i++] = n % 10 + '0'; 
+        n /= 10; 
+    } while (n); 
+    --i; 
+  
+    if (neg) putchar_unlocked('-'); 
+  
+    while (i >= 0) putchar_unlocked(outputbuffer[i--]); 
+  
+    putchar_unlocked('\n'); 
+} 
 
 ////////////////////////////// Task ////////////////////////
 
