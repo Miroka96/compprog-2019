@@ -3,9 +3,9 @@
 ////////////////////////////// Helper //////////////////////
 
 // disable debugging for submission
-//#define debug(x)    x
+#define debug(x)    x
 // print value of debug variable
-#define debug(x) clog << #x << " = " << x << endl
+//#define debug(x) clog << #x << " = " << x << endl
 
 // print a debug string
 #define debugs(str) // clog << str << endl
