@@ -16,56 +16,75 @@
 using namespace std;
 
 ////////////////////////////// I/O /////////////////////////
-#define BASE 10
-#define OUTPUT_LENGTH 24
 #define BUFFER_SIZE 1024
 
 // buffer stdin
 char inputbuffer[BUFFER_SIZE];
 
-template<typename T> inline void readn(T &x) 
-{ 
-    x = 0; 
-    bool neg = 0; 
-    register T c = getchar_unlocked(); 
-  
-    if (c == '-') 
-        neg = 1, c = getchar_unlocked(); 
-  
-    for ( ; c >= '0' && c <= '9'; c = getchar_unlocked() ) 
-        x = (x << 3) + ( x << 1 ) + ( c & 15 ); 
-  
-    if (neg) x *= -1; 
-} 
-
-// create output buffer
-char outputbuffer[OUTPUT_LENGTH];
-
-template<typename T> inline void write(T n) 
-{ 
-    bool neg = 0; 
-    if (n < 0) n *= -1, neg = 1; 
-  
-    int i = 0; 
-    do { 
-        outputbuffer[i++] = n % 10 + '0'; 
-        n /= 10; 
-    } while (n); 
-    --i; 
-  
-    if (neg) putchar_unlocked('-'); 
-  
-    while (i >= 0) putchar_unlocked(outputbuffer[i--]); 
-  
-    putchar_unlocked('\n'); 
-} 
 
 ////////////////////////////// Task ////////////////////////
+
+// '0' = 48
+// 'A' = 65
+char translation[91] = {'0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', 0, '1', 'S', 'E', 0, 'Z', 0, 0, '8', 0, ':', ';', '<', '=', '>', '?', '@', 'A', 0, 0, 0, '3', 0, 0, 'H', 'I', 'L', 0, 'J', 'M', 0, 'O', 0, 0, 0, '2', 'T', 'U', 'V', 'W', 'X', 'Y', '5'};
+
+#define MAX_STRING_LENGTH 10000
+char stringBuffer[MAX_STRING_LENGTH];
+char translatedStringBuffer[MAX_STRING_LENGTH];
+
+constexpr char notPalindrome[] = " -- is not a palindrome.";
+constexpr char palindrome[] = " -- is a regular palindrome.";
+constexpr char mirrored[] = " -- is a mirrored string.";
+constexpr char mirroredPalindrome[] = " -- is a mirrored palindrome.";
+
+inline void print(const char* str) {
+    for (const char* c = str; *c; c++) {
+        putchar_unlocked(*c);
+    }
+}
+
+inline bool isPalindrome(short end) {
+    for(short start = 0; start <= end; start++, end--) {
+        if (stringBuffer[start] != stringBuffer[end]) return false;
+    }
+    return true;
+}
+
+inline bool isMirrored(short inputSize) {
+    for(short start = 0, end = inputSize; end >= 0; start++, end--) {
+        register char t = translation[stringBuffer[end]];
+        if (t == 0 || stringBuffer[start] != t) return false;
+    }
+    return true;
+}
 
 int main(int argc, char* argv[]) {
     setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
 
-    
+    register char c = getchar_unlocked(); 
+    register short i = 0;
+
+    for ( ; c != '\n'; c = getchar_unlocked(), i++ ) {
+        stringBuffer[i] = c;
+        translatedStringBuffer[i] = translation[c];
+        putchar_unlocked(c);
+    }
+    i--;
+
+    if (isPalindrome(i)) {
+        if (isMirrored(i)) {
+            print(mirroredPalindrome);
+        } else {
+            print(palindrome);
+        }
+    } else {
+        if (isMirrored(i)) {
+            print(mirrored);
+        } else {
+            print(notPalindrome);
+        }
+    }
+    putchar_unlocked('\n');
 
     return 0;
 }
