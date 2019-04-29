@@ -2,10 +2,10 @@ testcompilec: compilec testc
 testcompilecpp: compilecpp testcpp
 
 compilec:
-	gcc -o cprogram solution.c
+	gcc -o cprogram hogwarts.c
 
 compilecpp:
-	g++ -o cppprogram solution.cpp
+	g++ -o cppprogram hogwarts.cpp
 
 testc:
 	cat 1.in | ./cprogram | diff - 1.out
@@ -20,10 +20,10 @@ testcpp:
 	cat 4.in | ./cppprogram | diff - 4.out
 
 testp:
-	cat 1.in | ./solution.py | diff - 1.out
-	cat 2.in | ./solution.py | diff - 2.out
-	cat 3.in | ./solution.py | diff - 3.out
-	cat 4.in | ./solution.py | diff - 4.out
+	cat 1.in | ./hogwarts.py | diff - 1.out
+	cat 2.in | ./hogwarts.py | diff - 2.out
+	cat 3.in | ./hogwarts.py | diff - 3.out
+	cat 4.in | ./hogwarts.py | diff - 4.out
 
 clean:
 	rm cprogram
