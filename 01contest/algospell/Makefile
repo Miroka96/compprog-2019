@@ -2,10 +2,10 @@ testcompilec: compilec testc
 testcompilecpp: compilecpp testcpp
 
 compilec:
-	gcc -o cprogram algorithmicSpellcasting.c
+	gcc -o cprogram algospell.c
 
 compilecpp:
-	g++ -o cppprogram algorithmicSpellcasting.cpp
+	g++ -o cppprogram algospell.cpp
 
 testc:
 	cat 1.in | ./cprogram | diff - 1.out
@@ -20,10 +20,10 @@ testcpp:
 	cat 4.in | ./cppprogram | diff - 4.out
 
 testp:
-	cat 1.in | ./mirpal.py | diff - 1.out
-	cat 2.in | ./mirpal.py | diff - 2.out
-	cat 3.in | ./mirpal.py | diff - 3.out
-	cat 4.in | ./mirpal.py | diff - 4.out
+	cat 1.in | ./algospell.py | diff - 1.out
+	cat 2.in | ./algospell.py | diff - 2.out
+	cat 3.in | ./algospell.py | diff - 3.out
+	cat 4.in | ./algospell.py | diff - 4.out
 
 clean:
 	rm cprogram

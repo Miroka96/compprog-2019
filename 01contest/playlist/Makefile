@@ -20,10 +20,10 @@ testcpp:
 	cat 4.in | ./cppprogram | diff - 4.out
 
 testp:
-	cat 1.in | ./mirpal.py | diff - 1.out
-	cat 2.in | ./mirpal.py | diff - 2.out
-	cat 3.in | ./mirpal.py | diff - 3.out
-	cat 4.in | ./mirpal.py | diff - 4.out
+	cat 1.in | ./playlist.py | diff - 1.out
+	cat 2.in | ./playlist.py | diff - 2.out
+	cat 3.in | ./playlist.py | diff - 3.out
+	cat 4.in | ./playlist.py | diff - 4.out
 
 clean:
 	rm cprogram

@@ -2,10 +2,10 @@ testcompilec: compilec testc
 testcompilecpp: compilecpp testcpp
 
 compilec:
-	gcc -o cprogram mirpal.c
+	gcc -o cprogram topics.c
 
 compilecpp:
-	g++ -o cppprogram mirpal.cpp
+	g++ -o cppprogram topics.cpp
 
 testc:
 	cat 1.in | ./cprogram | diff - 1.out
@@ -20,10 +20,10 @@ testcpp:
 	cat 4.in | ./cppprogram | diff - 4.out
 
 testp:
-	cat 1.in | ./mirpal.py | diff - 1.out
-	cat 2.in | ./mirpal.py | diff - 2.out
-	cat 3.in | ./mirpal.py | diff - 3.out
-	cat 4.in | ./mirpal.py | diff - 4.out
+	cat 1.in | ./topics.py | diff - 1.out
+	cat 2.in | ./topics.py | diff - 2.out
+	cat 3.in | ./topics.py | diff - 3.out
+	cat 4.in | ./topics.py | diff - 4.out
 
 clean:
 	rm cprogram
