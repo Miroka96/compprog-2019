@@ -1,0 +1,13 @@
+4 8
+West-Wing-Staircase Dungeons 5
+Grand-Staircase Gryffindor-Common-Room 10
+Entrance-Hall Grand-Staircase 10
+Potions-Laboratory Dungeons 5
+Gryffindor-Common-Room West-Wing-Staircase 20
+Great-Hall Entrance-Hall 2
+Grand-Staircase Dungeons 20
+West-Wing-Staircase Great-Hall 15
+Great-Hall
+Potions-Laboratory
+Hufflepuff-Girls'-Dormitory
+Great-Hall
