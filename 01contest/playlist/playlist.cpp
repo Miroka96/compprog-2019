@@ -3,9 +3,9 @@
 ////////////////////////////// Helper //////////////////////
 
 // disable debugging for submission
-//#define debug(x)    x
+#define debug(x)    x
 // print value of debug variable
-#define debug(x) clog << #x << " = " << x << endl
+//#define debug(x) clog << #x << " = " << x << endl
 
 // print a debug string
 #define debugs(str) // clog << str << endl
@@ -26,7 +26,7 @@ char inputbuffer[BUFFER_SIZE];
 template <typename T> inline void readn(T &x) {
   x = 0;
   bool neg = 0;
-  register T c = getchar_unlocked();
+  T c = getchar_unlocked();
 
   if (c == '-')
     neg = 1, c = getchar_unlocked();
@@ -90,30 +90,26 @@ int main(int argc, char *argv[]) {
 
     char max_length = 0;
     int min = 0;
-    register char c;
+    char c;
     rep(i, count) {
       c = getchar_unlocked() - 'a';
-      debug(c + 'a');
+      debug((int)c);
 
       int last = last_seen[c];
       last_seen[c] = i;
 
       debug(last);
-      if (last > min) {
+      debug(min);
 
-        min = last;
+      if (last >= min) {
+        min = last + 1;
         debug(min);
-        if (i - min > max_length) {
-          max_length = i - min;
-        }
-        
-        
-      } else {
-        max_length++;
+      } 
+      
+      if (i - min + 1 > max_length) {
+        max_length = i - min + 1;
       }
       debug((int)max_length);
-      
-      
     }
 
     getchar_unlocked();

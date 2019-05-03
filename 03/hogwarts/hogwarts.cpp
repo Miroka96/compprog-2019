@@ -67,10 +67,28 @@ string read_string(char delimeter) {
 
 ////////////////////////////// Task ////////////////////////
 
+///////////////////////////// Graph ////////////////////////
+
 #define MAX_VERTEX_COUNT 610
 typedef unsigned short vertex_t;
 typedef unsigned int weight_t;
 typedef unsigned int path_weight_t;
+#undef INFINITY
+#define INFINITY 0xffffffff;
+
+/////////////////////////// adjacency matrix ///////////////
+
+/*
+weight_t weights[MAX_VERTEX_COUNT*MAX_VERTEX_COUNT];
+inline void insert_weight(vertex_t x, vertex_t y, weight_t w) {
+  x--;
+  y--;
+  weights[x * MAX_VERTEX_COUNT + y] = w;
+  weights[y * MAX_VERTEX_COUNT + x] = w;
+}
+*/
+
+////////////////////////// adjacency list //////////////////
 
 typedef struct Vertex {
   path_weight_t distance;
@@ -82,6 +100,19 @@ std::vector<vertex> vertices;
 #define get_vertex(v) vertices[v-1]
 #define get_distance(v) get_vertex(v).distance
 
+inline void insert_weight(const vertex_t& x, const vertex_t& y, const weight_t& w) {
+  if (w == 0) {
+    get_vertex(x).outgoing.erase(y);
+    get_vertex(y).outgoing.erase(x);
+  } else {
+    get_vertex(x).outgoing[y] = w;
+    get_vertex(y).outgoing[x] = w;
+  }
+}
+
+
+////////////////////// string to int //////////////////////
+
 unordered_map<string, vertex_t> str_to_int;
 vertex_t highest_map_index = 0;
 
@@ -89,41 +120,111 @@ vertex_t get_or_create_index(const string& str) {
   vertex_t& value = str_to_int[str];
   if (value == 0) {
     value = ++highest_map_index;
+
+    // adjacency list
     vertices.push_back(vertex{});
-    debug(&get_vertex(highest_map_index).outgoing);
   }
   return value;
 }
 
+////////////////////////// Dijkstra /////////////////////
 
-
-inline void insert_weight(const vertex_t& x, const vertex_t& y, const weight_t& w) {
-  if (w == 0) {
-    vertices[x-1].outgoing.erase(y);
-    vertices[y-1].outgoing.erase(x);
-  } else {
-    vertices[x-1].outgoing[y] = w;
-    vertices[y-1].outgoing[x] = w;
-  }
-}
-
-/*
-weight_t weights[MAX_VERTEX_COUNT*MAX_VERTEX_COUNT];
-inline void insert_weight(vertex_t x, vertex_t y, weight_t w) {
-  x--;
-  y--;
-  weights[x * MAX_VERTEX_COUNT + y] = w;
-  weights[y * MAX_VERTEX_COUNT + x] = w;
-}
-// preferably iterate by incrementing y
-inline weight_t get_weight(vertex_t x, vertex_t y) {
-  x--;
-  y--;
-  return weights[x * MAX_VERTEX_COUNT + y];
-}
-*/
 typedef pair<path_weight_t,vertex_t> dijkstra_distance;
 
+const auto minimum_dijstra_distance_comparator = [](dijkstra_distance& a, dijkstra_distance& b) {
+    return a.first > b.first;
+};
+
+#define create_dijkstra_priority_queue(name) priority_queue<dijkstra_distance, std::vector<dijkstra_distance>,decltype(minimum_dijstra_distance_comparator)> name(minimum_dijstra_distance_comparator)
+
+inline path_weight_t AdjacencyListDijkstra(vector<vertex>& vertices, vertex_t start, const vertex_t& target) {
+  create_dijkstra_priority_queue(distance_queue);
+
+  for (auto& vertex : vertices) {
+    vertex.distance = INFINITY;
+  }
+  get_distance(start) = 0;
+
+  path_weight_t recent_distance = 0;
+
+  while(true) {
+    debug(start);
+    debug(recent_distance);
+    debug(get_distance(start));
+
+    if (get_distance(start) == recent_distance) { // necessary to skip old values in the queue (they are hard to delete)
+      if (start == target) break;
+
+      for (const auto& [neighbor, edge_weight] : get_vertex(start).outgoing) {
+        debug(neighbor);
+        debug(edge_weight);
+        if (neighbor == start) continue;
+
+        const auto possible_dist = recent_distance + edge_weight;
+        debug(possible_dist);
+
+        if (get_distance(neighbor) > possible_dist) {
+          get_distance(neighbor) = possible_dist;
+          debug(get_distance(neighbor));
+          distance_queue.push({possible_dist, neighbor});
+        }
+      }
+    }
+    // if (distance_queue.empty()) return 0; // no path
+
+    tie(recent_distance, start) = distance_queue.top();
+    distance_queue.pop();
+  }
+  return recent_distance;
+}
+
+inline path_weight_t AdjacencyMatrixDijkstra(weight_t* weights, vertex_t start, const vertex_t& target) {
+  create_dijkstra_priority_queue(distance_queue);
+  path_weight_t* distances = new path_weight_t[highest_map_index]();
+
+  for (auto& vertex : vertices) {
+    vertex.distance = INFINITY;
+  }
+  get_distance(start) = 0;
+
+  path_weight_t recent_distance = 0;
+
+  while(true) {
+    debug(start);
+    debug(recent_distance);
+    debug(get_distance(start));
+
+    if (get_distance(start) == recent_distance) { // necessary to skip old values in the queue (they are hard to delete)
+      if (start == target) break;
+
+      for (vertex_t neighbor = 1; neighbor <= highest_map_index; neighbor++) {
+        debug(neighbor);
+        if (neighbor == start) continue;
+
+        weight_t edge_weight = weights[(start - 1) * MAX_VERTEX_COUNT + (neighbor - 1)];
+        debug(edge_weight);
+        if (edge_weight == 0) continue;
+        //insert_weight(start, neighbor, 0);// delete edge for the second direction (can only be larger)
+        
+        const auto& neighbor_dist = distances[neighbor-1];
+        const auto& possible_dist = recent_distance + edge_weight;
+        debug(neighbor_dist);
+        debug(possible_dist);
+
+        if (neighbor_dist == 0 || neighbor_dist > possible_dist) {
+          distances[neighbor - 1] = possible_dist;
+          debug(distances[neighbor - 1]);
+          distance_queue.push({possible_dist, neighbor});
+        }
+      }
+    }
+    // if (distance_queue.empty()) return 0; // no path
+
+    tie(recent_distance, start) = distance_queue.top();
+    distance_queue.pop();
+  }
+  return recent_distance;
+}
 
 int main(int argc, char *argv[]) {
   setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
@@ -136,10 +237,6 @@ int main(int argc, char *argv[]) {
 
   short n;  // number of help requests
   readn(n);
-
-  auto comp_minimum_distance = [](dijkstra_distance& a, dijkstra_distance& b) {
-    return a.first > b.first;
-  };
 
   rep(help_i, n) {
     debug(start);
@@ -163,64 +260,7 @@ int main(int argc, char *argv[]) {
       insert_weight(from, to, time);
     }
 
-    priority_queue<dijkstra_distance, std::vector<dijkstra_distance>, decltype(comp_minimum_distance)> distance_queue(comp_minimum_distance);
-    for (auto& vertex : vertices) {
-      vertex.distance = 0xffffffff;
-    }
-    get_distance(start) = 0;
-    //path_weight_t* distances = new path_weight_t[highest_map_index]();
-
-    path_weight_t recent_distance = 0;
-
-    do {
-      debug(start);
-      debug(recent_distance);
-      debug(get_distance(start));
-      if (get_distance(start) == recent_distance) {
-        if (start == target) break;
-
-        for (auto& neighbor : get_vertex(start).outgoing) {
-          debug(neighbor.first);
-          debug(neighbor.second);
-          if (neighbor.first == start) continue;
-
-          const auto& possible_dist = recent_distance + neighbor.second;
-          debug(possible_dist);
-
-          if (get_distance(neighbor.first) > possible_dist) {
-            get_distance(neighbor.first) = possible_dist;
-            debug(get_distance(neighbor.first));
-            distance_queue.push({possible_dist, neighbor.first});
-          }
-        }
-        /*
-        for (vertex_t neighbor = 1; neighbor <= highest_map_index; neighbor++) {
-          debug(neighbor);
-          if (neighbor == start) continue;
-
-          weight_t edge_weight = get_weight(start, neighbor);
-          debug(edge_weight);
-          if (edge_weight == 0) continue;
-          //insert_weight(start, neighbor, 0);// delete edge for the second direction (can only be larger)
-          
-          const auto& neighbor_dist = distances[neighbor-1];
-          const auto& possible_dist = recent_distance + edge_weight;
-          debug(neighbor_dist);
-          debug(possible_dist);
-
-          if (neighbor_dist == 0 || neighbor_dist > possible_dist) {
-            distances[neighbor - 1] = possible_dist;
-            debug(distances[neighbor - 1]);
-            distance_queue.push({possible_dist, neighbor});
-          }
-        }*/
-      }
-      // if (distance_queue.empty()) return 1; // no path
-      tie(recent_distance, start) = distance_queue.top();
-      distance_queue.pop();
-    } while(true);
-
-    write(recent_distance);
+    write(AdjacencyListDijkstra(vertices, start, target));
 
     start = target;
   }
