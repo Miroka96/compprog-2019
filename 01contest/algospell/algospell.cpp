@@ -2,25 +2,14 @@
 
 ////////////////////////////// Helper //////////////////////
 
-// disable debugging for submission
-#define debug(x) // x
-// print value of debug variable
-//#define debug(x) clog << #x << " = " << x << endl
-
-// print a debug string
-#define debugs(str) // clog << str << endl
 #define rep(a, b) for (int a = 0; a < (b); ++a)
-#define repd(a, b) for (int a = 0; a < (b); debug(++a))
-#define all(a) (a).begin(), (a).end()
 
 using namespace std;
 
 ////////////////////////////// I/O /////////////////////////
-#define BASE 10
 #define OUTPUT_LENGTH 24
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 0xfffff
 
-// buffer stdin
 char inputbuffer[BUFFER_SIZE];
 
 template <typename T> inline void readn(T &x) {
@@ -32,7 +21,6 @@ template <typename T> inline void readn(T &x) {
     x = (x << 3) + (x << 1) + (c & 15);
 }
 
-// create output buffer
 char outputbuffer[OUTPUT_LENGTH];
 
 template <typename T> inline void write(T n) {
@@ -50,34 +38,44 @@ template <typename T> inline void write(T n) {
 
 ////////////////////////////// Task ////////////////////////
 
-#define MAX_VERTEX_COUNT 4000
-typedef uint64_t vertex_t;
-typedef uint64_t weight_t;
-typedef uint64_t path_weight_t;
-#undef INFINITY
-#define INFINITY 0xffffffffffffffff;
+typedef uint16_t vertex_t;
+typedef uint16_t weight_t;
+typedef uint32_t path_weight_t;
 
-weight_t weights[MAX_VERTEX_COUNT * MAX_VERTEX_COUNT];
-inline void insert_weight(vertex_t x, vertex_t y, weight_t w) {
-  weights[x * MAX_VERTEX_COUNT + y] = w;
-}
+constexpr const path_weight_t infinity = -1;
 
-inline weight_t &get_weight(vertex_t x, vertex_t y) {
-  return weights[x * MAX_VERTEX_COUNT + y];
-}
+int main(int argc, char *argv[]) {
+  setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
 
-inline weight_t *get_neighbor_weights(vertex_t x) {
-  return &weights[x * MAX_VERTEX_COUNT];
-}
+  vertex_t vertex_count;
+  int edge_count;
+  readn(vertex_count);
+  readn(edge_count);
 
-inline path_weight_t AdjacencyMatrixDijkstra(const vertex_t &vertex_count,
-                                             vertex_t start,
-                                             const vertex_t &target) {
+  weight_t weights[vertex_count][vertex_count];
 
-  path_weight_t *distances = new path_weight_t[vertex_count]();
-  bool *marked = new bool[vertex_count]();
+  rep(i, vertex_count) {
+    rep(j, vertex_count) { weights[i][j] = infinity; }
+  }
 
-  rep(i, vertex_count) { distances[i] = INFINITY; }
+  while (edge_count--) {
+    vertex_t from, to;
+    weight_t weight;
+    readn(from);
+    readn(to);
+    readn(weight);
+
+    weights[from][to] = weight;
+  }
+
+  vertex_t start = 0;
+  vertex_t target = vertex_count - 1;
+
+  path_weight_t distances[vertex_count];
+  fill_n(distances, vertex_count, infinity);
+
+  bool marked[vertex_count];
+  fill_n(marked, vertex_count, false);
 
   distances[start] = 0;
   path_weight_t recent_distance = 0;
@@ -85,22 +83,19 @@ inline path_weight_t AdjacencyMatrixDijkstra(const vertex_t &vertex_count,
   while (start != target) {
     marked[start] = true;
 
-    weight_t *neighbor_weights = get_neighbor_weights(start);
-
-    for (vertex_t neighbor = 0; neighbor < vertex_count;
-         neighbor++, neighbor_weights++) {
-      if (*neighbor_weights == 0)
+    rep(neighbor, vertex_count) {
+      if (weights[start][neighbor] == infinity)
         continue;
-  
-      const path_weight_t neighbor_dist = distances[neighbor];
-      const path_weight_t possible_dist = recent_distance + *neighbor_weights;
 
-      if (neighbor_dist > possible_dist) {
+      const path_weight_t possible_dist =
+          recent_distance + weights[start][neighbor];
+
+      if (distances[neighbor] > possible_dist) {
         distances[neighbor] = possible_dist;
       }
     }
 
-    recent_distance = INFINITY;
+    recent_distance = infinity;
     rep(i, vertex_count) {
       if (marked[i])
         continue;
@@ -110,35 +105,7 @@ inline path_weight_t AdjacencyMatrixDijkstra(const vertex_t &vertex_count,
       }
     }
   }
-  return recent_distance;
-}
-
-int main(int argc, char *argv[]) {
-  setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
-
-  vertex_t vertex_count;
-  uint64_t edge_count;
-  readn(vertex_count);
-  readn(edge_count);
-
-  rep(i, edge_count) {
-    vertex_t from;
-    vertex_t to;
-    weight_t weight;
-    readn(from);
-    readn(to);
-    readn(weight);
-    debug(from);
-    debug(to);
-    debug(weight);
-
-    insert_weight(from, to, weight);
-  }
-
-  vertex_t start = 0;
-  vertex_t target = vertex_count - 1;
-
-  write(AdjacencyMatrixDijkstra(vertex_count, start, target));
+  write(distances[target]);
 
   return 0;
 }
