@@ -10,5 +10,4 @@ NEW=$(echo $1 | cut -d / -f 2)
 
 sed -i "s,$OLD,$NEW,g" $DIR/$1/Makefile
 mv $DIR/$1/$OLD.cpp $DIR/$1/$NEW.cpp
-mv $DIR/$1/$OLD.c $DIR/$1/$NEW.c
 mv $DIR/$1/$OLD.py $DIR/$1/$NEW.py
