@@ -2,10 +2,10 @@ testcompilec: compilec testc
 testcompilecpp: compilecpp testcpp
 
 compilec:
-	gcc -o cprogram solution.c
+	gcc -o cprogram cycling.c
 
 compilecpp:
-	g++ -o cppprogram solution.cpp
+	g++ -o cppprogram cycling.cpp
 
 testc:
 	cat 1.in | ./cprogram | diff - 1.out

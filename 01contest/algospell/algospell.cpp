@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
     readn(from);
     readn(to);
     readn(weight);
+    if (weight == 0) return 1;
 
     weights[from][to] = weight;
   }
