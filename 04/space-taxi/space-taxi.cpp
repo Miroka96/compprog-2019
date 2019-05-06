@@ -18,7 +18,7 @@ using namespace std;
 ////////////////////////////// I/O /////////////////////////
 #define BASE 10
 #define OUTPUT_LENGTH 24
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 0x10000
 
 // buffer stdin
 char inputbuffer[BUFFER_SIZE];
@@ -38,10 +38,23 @@ template <typename T> inline void readn(T &x) {
     x *= -1;
 }
 
+constexpr const int infinity = INT_MAX;
+
 // create output buffer
 char outputbuffer[OUTPUT_LENGTH];
 
+inline void print(const char *str) {
+  for (const char *c = str; *c; c++) {
+    putchar_unlocked(*c);
+  }
+}
+
 template <typename T> inline void write(T n) {
+  if (n == infinity) {
+    print("oo\n");
+    return;
+  }
+
   bool neg = 0;
   if (n < 0)
     n *= -1, neg = 1;
@@ -62,16 +75,64 @@ template <typename T> inline void write(T n) {
   putchar_unlocked('\n');
 }
 
-inline void print(const char *str) {
-  for (const char *c = str; *c; c++) {
-    putchar_unlocked(*c);
-  }
-}
-
 ////////////////////////////// Task ////////////////////////
+
+typedef short vertex_t;
+typedef int weight_t;
+typedef int path_weight_t;
+
+constexpr const int unknown = INT_MIN;
+// constexpr const int infinity = INT_MAX;
+
+template <typename T> inline T &min(T &a, T &b) {
+  if (a > b)
+    return b;
+  return a;
+}
 
 int main(int argc, char *argv[]) {
   setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
+
+  vertex_t planet_count;
+  int route_count;
+  int query_count;
+
+  readn(planet_count);
+  readn(route_count);
+  readn(query_count);
+
+  // unordered_map<vertex_t, weight_t> weights[planet_count] = {};
+
+  path_weight_t distances[planet_count][planet_count];
+  rep(i, planet_count) rep(j, planet_count) distances[i][j] = infinity;
+
+  rep(m, route_count) {
+    vertex_t from, to;
+    weight_t weight;
+    readn(from);
+    readn(to);
+    readn(weight);
+
+    distances[from][to] = weight;
+  }
+
+  rep(k, planet_count) rep(i, planet_count) {
+    if (distances[i][k] == infinity)
+      continue;
+    rep(j, planet_count) {
+      if (distances[k][j] == infinity)
+        continue;
+      distances[i][j] = min(distances[i][j], distances[i][k] + distances[k][j]);
+    }
+  }
+
+  rep(k, query_count) {
+    vertex_t from, to;
+    readn(from);
+    readn(to);
+
+    write(distances[from][to]);
+  }
 
   return 0;
 }
