@@ -18,34 +18,23 @@ using namespace std;
 ////////////////////////////// I/O /////////////////////////
 #define BASE 10
 #define OUTPUT_LENGTH 24
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 0x100000
 
 // buffer stdin
 char inputbuffer[BUFFER_SIZE];
 
 template <typename T> inline void readn(T &x) {
   x = 0;
-  bool neg = 0;
   register T c = getchar_unlocked();
-
-  if (c == '-')
-    neg = 1, c = getchar_unlocked();
 
   for (; c >= '0' && c <= '9'; c = getchar_unlocked())
     x = (x << 3) + (x << 1) + (c & 15);
-
-  if (neg)
-    x *= -1;
 }
 
 // create output buffer
 char outputbuffer[OUTPUT_LENGTH];
 
 template <typename T> inline void write(T n) {
-  bool neg = 0;
-  if (n < 0)
-    n *= -1, neg = 1;
-
   int i = 0;
   do {
     outputbuffer[i++] = n % 10 + '0';
@@ -53,13 +42,8 @@ template <typename T> inline void write(T n) {
   } while (n);
   --i;
 
-  if (neg)
-    putchar_unlocked('-');
-
   while (i >= 0)
     putchar_unlocked(outputbuffer[i--]);
-
-  putchar_unlocked('\n');
 }
 
 inline void print(const char *str) {
@@ -73,5 +57,58 @@ inline void print(const char *str) {
 int main(int argc, char *argv[]) {
   setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
 
+  int topics_count, dependency_count;
+  readn(topics_count);
+  readn(dependency_count);
+
+  int difficulties[topics_count];
+  int dependencies[topics_count] = {};
+  vector<int> enables[topics_count] {};
+
+  rep(i, topics_count) {
+    int difficulty;
+    readn(difficulty);
+    difficulties[i] = difficulty;
+  }
+
+  while(dependency_count--) {
+    int from, to;
+    readn(from);
+    readn(to);
+    from--;
+    to--;
+    enables[from].push_back(to);
+    dependencies[to] += 1;
+  }
+
+  auto cmp = [](const pair<int, int> &a, const pair<int, int> &b) {
+    return a.first > b.first;
+  };
+
+  // difficulty, topic
+  priority_queue<pair<int, int>, vector<pair<int, int>>, decltype(cmp)> least_difficult(cmp);
+
+  rep(i, topics_count) {
+    if (dependencies[i] > 0) continue;
+    least_difficult.push(make_pair(difficulties[i], i));
+  }
+
+  rep(i, topics_count) {
+    int diff, topic;
+    tie(diff, topic) = least_difficult.top();
+    least_difficult.pop();
+
+    write(topic + 1);
+    putchar_unlocked(' ');
+
+    for(const auto &dependent : enables[topic]) {
+      dependencies[dependent]--;
+      if (dependencies[dependent] == 0) {
+        least_difficult.push(make_pair(difficulties[dependent], dependent));
+      }
+    }
+  }
+  putchar_unlocked('\n');
+  
   return 0;
 }
