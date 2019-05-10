@@ -38,7 +38,7 @@ template <typename T> inline void readn(T &x) {
     x *= -1;
 }
 
-constexpr const int infinity = INT_MAX;
+constexpr const long long int  infinity = LLONG_MAX/2-1;
 
 // create output buffer
 char outputbuffer[OUTPUT_LENGTH];
@@ -50,7 +50,7 @@ inline void print(const char *str) {
 }
 
 template <typename T> inline void write(T n) {
-  if (n == infinity) {
+  if (n > infinity/4) {
     print("oo\n");
     return;
   }
@@ -79,7 +79,7 @@ template <typename T> inline void write(T n) {
 
 typedef short vertex_t;
 typedef int weight_t;
-typedef int path_weight_t;
+typedef long long int path_weight_t;
 
 constexpr const int unknown = INT_MIN;
 // constexpr const int infinity = INT_MAX;
@@ -120,8 +120,6 @@ int main(int argc, char *argv[]) {
     if (distances[i][k] == infinity)
       continue;
     rep(j, planet_count) {
-      if (distances[k][j] == infinity)
-        continue;
       distances[i][j] = min(distances[i][j], distances[i][k] + distances[k][j]);
     }
   }
