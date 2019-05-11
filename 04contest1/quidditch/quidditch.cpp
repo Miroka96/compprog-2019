@@ -1,77 +1,165 @@
+
 #include <bits/stdc++.h>
-
-////////////////////////////// Helper //////////////////////
-
-// disable debugging for submission
-//#define debug(x)    x
-// print value of debug variable
-#define debug(x) clog << #x << " = " << x << endl
-
-// print a debug string
-#define debugs(str) // clog << str << endl
-#define rep(a, b) for (int a = 0; a < (b); ++a)
-#define repd(a, b) for (int a = 0; a < (b); debug(++a))
-#define all(a) (a).begin(), (a).end()
-
+#include <unistd.h>
 using namespace std;
 
-////////////////////////////// I/O /////////////////////////
-#define BASE 10
-#define OUTPUT_LENGTH 24
-#define BUFFER_SIZE 0x10000
+struct Input
+{
+	char *buf;
 
-// buffer stdin
-char inputbuffer[BUFFER_SIZE];
+	Input(size_t size) : buf((char *)malloc(size))
+	{
+		ios_base::sync_with_stdio(0);
+		cin.tie(0);
+		cout.precision(10);
 
-template <typename T> inline void readn(T &x) {
-  x = 0;
-  bool neg = 0;
-  register T c = getchar_unlocked();
+		char *start = buf;
+		int n = 0;
+		do
+		{
+			buf += n;
+			n = read(STDIN_FILENO, buf, size);
+		} while (n > 0);
+		assert(buf <= start + size);
+		buf = start;
+	}
 
-  if (c == '-')
-    neg = 1, c = getchar_unlocked();
+	void skip_space()
+	{
+		while (*buf <= ' ')
+			buf++;
+	}
 
-  for (; c >= '0' && c <= '9'; c = getchar_unlocked())
-    x = (x << 3) + (x << 1) + (c & 15);
+	operator char()
+	{
+		skip_space();
+		return *buf++;
+	}
 
-  if (neg)
-    x *= -1;
-}
+	operator bool()
+	{
+		skip_space();
+		return *buf++ != '0';
+	}
 
-// create output buffer
-char outputbuffer[OUTPUT_LENGTH];
+	operator char *()
+	{
+		skip_space();
+		char *s = buf;
+		while (*buf++ > ' ')
+			;
+		buf[-1] = '\0';
+		return s;
+	}
 
-template <typename T> inline void write(T n) {
-  bool neg = 0;
-  if (n < 0)
-    n *= -1, neg = 1;
+	operator float()
+	{
+		return (double)*this;
+	}
 
-  int i = 0;
-  do {
-    outputbuffer[i++] = n % 10 + '0';
-    n /= 10;
-  } while (n);
-  --i;
+	operator double()
+	{
+		char *s = *this;
+		return atof(s);
+	}
 
-  if (neg)
-    putchar_unlocked('-');
+	template <typename T>
+	operator T()
+	{
+		skip_space();
+		T n = 0;
+		char c = *buf++;
+		bool neg = c == '-';
+		if (neg)
+			c = *buf++;
+		while (c > ' ')
+		{
+			n *= 10;
+			n += c - '0';
+			c = *buf++;
+		}
+		if (neg)
+			n = -n;
+		return n;
+	}
+};
 
-  while (i >= 0)
-    putchar_unlocked(outputbuffer[i--]);
+struct node
+{
+	int begin;
+	int end;
+};
 
-  putchar_unlocked('\n');
-}
+int main()
+{
+	auto in = Input(1 << 28);
 
-inline void print(const char *str) {
-  for (const char *c = str; *c; c++) {
-    putchar_unlocked(*c);
-  }
-}
+	int n = in;
 
-////////////////////////////// Task ////////////////////////
+	node nodeArray[n];
 
-int main(int argc, char *argv[]) {
-  setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
+	auto cmp = [](node a, node b) { return a.begin < b.begin; };
 
-  return 0;
+	for (int i = 0; i < n; i++)
+	{
+		nodeArray[i].begin = in;
+		nodeArray[i].end = in;
+	}
+
+	sort(nodeArray, nodeArray + n, cmp);
+
+	// for (int i = 0; i < n; i++)
+	// {
+	// 	printf("begin: %d end: %d\n", nodeArray[i].begin, nodeArray[i].end);
+	// }
+
+	// map<int, int> raumMap = {};
+
+	// auto raum = vector<int>(1, nodeArray[0].end);
+
+	// priority_queue<int> pq; 
+	priority_queue<int, std::vector<int>, std::greater<int> > pq;
+
+	pq.push(nodeArray[0].end);
+	// printf("%lu\n", pq.size());
+
+	// nodeArray[0].k = 0;
+	// raumMap[0] = nodeArray[0].end;
+	// raum[0] = nodeArray[0].end;
+
+	for (int j = 1; j < n; j++) {
+		if(pq.top() < nodeArray[j].begin) {
+			pq.pop();
+		}
+		pq.push(nodeArray[j].end);
+	}
+
+	printf("%lu\n", pq.size());
+
+
+	// for (int j = 1; j < n; j++)
+	// {
+	// 	bool gefunden = false;
+
+	// 	// printf("size: %lu\n", raumMap.size());
+	// 	for (int i = 0; i < raum.size(); i++)
+	// 	{
+	// 		printf("if: %d > %d\n", nodeArray[j].begin, raum[i]);
+	// 		if (nodeArray[j].begin > raum[i])
+	// 		{
+	// 			raum[i] = nodeArray[j].end;
+	// 			gefunden = true;
+	// 			break;
+	// 		}
+	// 	}
+
+	// 	if (!gefunden)
+	// 	{
+	// 		raum.push_back(nodeArray[j].end);
+	// 		// raum[raum.size()] = nodeArray[j].end;
+	// 	}
+	// }
+
+	// // printf("\n");
+	// printf("%lu\n", raum.size());
 }

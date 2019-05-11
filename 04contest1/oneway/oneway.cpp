@@ -1,77 +1,177 @@
+
 #include <bits/stdc++.h>
-
-////////////////////////////// Helper //////////////////////
-
-// disable debugging for submission
-//#define debug(x)    x
-// print value of debug variable
-#define debug(x) clog << #x << " = " << x << endl
-
-// print a debug string
-#define debugs(str) // clog << str << endl
-#define rep(a, b) for (int a = 0; a < (b); ++a)
-#define repd(a, b) for (int a = 0; a < (b); debug(++a))
-#define all(a) (a).begin(), (a).end()
-
+#include <unistd.h>
 using namespace std;
 
-////////////////////////////// I/O /////////////////////////
-#define BASE 10
-#define OUTPUT_LENGTH 24
-#define BUFFER_SIZE 0x10000
+struct Input
+{
+	char *buf;
 
-// buffer stdin
-char inputbuffer[BUFFER_SIZE];
+	Input(size_t size) : buf((char *)malloc(size))
+	{
+		ios_base::sync_with_stdio(0);
+		cin.tie(0);
+		cout.precision(10);
 
-template <typename T> inline void readn(T &x) {
-  x = 0;
-  bool neg = 0;
-  register T c = getchar_unlocked();
+		char *start = buf;
+		int n = 0;
+		do
+		{
+			buf += n;
+			n = read(STDIN_FILENO, buf, size);
+		} while (n > 0);
+		assert(buf <= start + size);
+		buf = start;
+	}
 
-  if (c == '-')
-    neg = 1, c = getchar_unlocked();
+	void skip_space()
+	{
+		while (*buf <= ' ')
+			buf++;
+	}
 
-  for (; c >= '0' && c <= '9'; c = getchar_unlocked())
-    x = (x << 3) + (x << 1) + (c & 15);
+	operator char()
+	{
+		skip_space();
+		return *buf++;
+	}
 
-  if (neg)
-    x *= -1;
-}
+	operator bool()
+	{
+		skip_space();
+		return *buf++ != '0';
+	}
 
-// create output buffer
-char outputbuffer[OUTPUT_LENGTH];
+	operator char *()
+	{
+		skip_space();
+		char *s = buf;
+		while (*buf++ > ' ')
+			;
+		buf[-1] = '\0';
+		return s;
+	}
 
-template <typename T> inline void write(T n) {
-  bool neg = 0;
-  if (n < 0)
-    n *= -1, neg = 1;
+	operator float()
+	{
+		return (double)*this;
+	}
 
-  int i = 0;
-  do {
-    outputbuffer[i++] = n % 10 + '0';
-    n /= 10;
-  } while (n);
-  --i;
+	operator double()
+	{
+		char *s = *this;
+		return atof(s);
+	}
 
-  if (neg)
-    putchar_unlocked('-');
+	template <typename T>
+	operator T()
+	{
+		skip_space();
+		T n = 0;
+		char c = *buf++;
+		bool neg = c == '-';
+		if (neg)
+			c = *buf++;
+		while (c > ' ')
+		{
+			n *= 10;
+			n += c - '0';
+			c = *buf++;
+		}
+		if (neg)
+			n = -n;
+		return n;
+	}
+};
 
-  while (i >= 0)
-    putchar_unlocked(outputbuffer[i--]);
+struct road
+{
+	int a;
+	int b;
+};
 
-  putchar_unlocked('\n');
-}
+struct node
+{
+	bool is_ingoing = false;
+	bool is_known = false;
+	vector<int> roads;
+};
 
-inline void print(const char *str) {
-  for (const char *c = str; *c; c++) {
-    putchar_unlocked(*c);
-  }
-}
+int
+main()
+{
+	auto in = Input(1 << 28);
 
-////////////////////////////// Task ////////////////////////
+	int crossroads_count = in;
+	int roads_count = in;
 
-int main(int argc, char *argv[]) {
-  setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
+	struct road roads[roads_count];
+	struct node nodes[crossroads_count];
+	for (int i = 0; i < crossroads_count; i++) {
+		nodes[i].is_known = false;
+		nodes[i].is_ingoing = false;
+		nodes[i].roads = {};
+	}
 
-  return 0;
+	for (int i = 0; i < roads_count; i++)
+	{
+		int a = in;
+		int b = in;
+		a--;
+		b--;
+		roads[i].a = a;
+		roads[i].b = b;
+		nodes[a].roads.push_back(i);
+		nodes[b].roads.push_back(i);
+	}
+
+	queue<pair<int, int>> bfs;
+	// node, level
+	bfs.push(make_pair(0, 0));
+	bool ingoing = true;
+	nodes[0].is_ingoing = true;
+	nodes[0].is_known = true;
+	int level = 0;
+
+	while (!bfs.empty())
+	{
+		auto p = bfs.front();
+
+		int recent = p.first;
+		int recent_level = p.second;
+
+		if (recent_level > level) {
+			level = recent_level;
+			ingoing = !ingoing;
+		}
+
+		bfs.pop();
+		//printf("recent %d\n", recent);
+
+		for (auto &road_i : nodes[recent].roads) {
+			struct road &road = roads[road_i];
+			
+			int other_node_i = road.a == recent ? road.b : road.a;
+			struct node &other_node = nodes[other_node_i];
+			if (!other_node.is_known) {
+				other_node.is_known = true;
+				bfs.push(make_pair(other_node_i, recent_level + 1));
+				other_node.is_ingoing = !ingoing;
+			} else {
+				if(other_node.is_ingoing == ingoing) {
+					printf("impossible!\n");
+					return 0;
+				}
+			}
+		}
+		
+	}
+
+	for(int i = 0; i < roads_count; i++) {
+		if (nodes[roads[i].a].is_ingoing) {
+			printf("0\n");
+		} else {
+			printf("1\n");
+		}
+	}
 }
