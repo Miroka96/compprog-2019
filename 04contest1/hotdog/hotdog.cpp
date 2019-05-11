@@ -83,6 +83,8 @@ struct Input
 	}
 };
 
+uint64_t prices[1000001];
+
 int main()
 {
 	auto in = Input(1 << 28);
@@ -90,20 +92,15 @@ int main()
 	int t = in; // length
 	int k = in; // angebote
 
-	uint64_t prices[t + 1];
-	for (int i = 0; i < t + 1; i++)
-	{
-		prices[i] = 0;
-	}
-
-	pair<int, uint64_t> angebote[k];
+	vector<pair<int, uint32_t>> angebote;
+	angebote.reserve(k);
 
 	for (int i = 0; i < k; i++)
 	{
 		int m = in;
-		uint64_t p = in;
+		uint32_t p = in;
 
-		angebote[i] = make_pair(m, p);
+		angebote.push_back(make_pair(m, p));
 
 		if (m <= t)
 		{
@@ -111,22 +108,19 @@ int main()
 		}
 	}
 
-	//auto cmp = [](const pair<int, uint64_t> &p, const pair<int, uint64_t> &q) { return p.first < q.first; };
-
-	// length, price
-	//sort(angebote, angebote + k, cmp);
-
 	for (int i = 0; i <= t; i++)
 	{
-		for (int j = 0; j < k; j++)
+		uint64_t min = prices[i];
+		for (const auto [length, price] : angebote)
 		{
-			if (i < angebote[j].first) continue;
-			uint64_t possible_price = prices[i - angebote[j].first] + angebote[j].second;
-			if (prices[i] < possible_price)
+			if (i < length) continue;
+			uint64_t possible_price = prices[i - length] + price;
+			if (min < possible_price)
 			{
-				prices[i] = possible_price;
+				min = possible_price;
 			}
 		}
+		prices[i] = min;
 	}
 	printf("%llu\n", prices[t]);
 }

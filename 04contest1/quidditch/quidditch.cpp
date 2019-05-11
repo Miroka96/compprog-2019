@@ -84,82 +84,55 @@ struct Input
 	}
 };
 
-struct node
-{
-	int begin;
-	int end;
-};
-
 int main()
 {
 	auto in = Input(1 << 28);
 
 	int n = in;
 
-	node nodeArray[n];
+	pair<int, bool> times[2*n];
 
-	auto cmp = [](node a, node b) { return a.begin < b.begin; };
-
-	for (int i = 0; i < n; i++)
-	{
-		nodeArray[i].begin = in;
-		nodeArray[i].end = in;
-	}
-
-	sort(nodeArray, nodeArray + n, cmp);
-
-	// for (int i = 0; i < n; i++)
-	// {
-	// 	printf("begin: %d end: %d\n", nodeArray[i].begin, nodeArray[i].end);
-	// }
-
-	// map<int, int> raumMap = {};
-
-	// auto raum = vector<int>(1, nodeArray[0].end);
-
-	// priority_queue<int> pq; 
-	priority_queue<int, std::vector<int>, std::greater<int> > pq;
-
-	pq.push(nodeArray[0].end);
-	// printf("%lu\n", pq.size());
-
-	// nodeArray[0].k = 0;
-	// raumMap[0] = nodeArray[0].end;
-	// raum[0] = nodeArray[0].end;
-
-	for (int j = 1; j < n; j++) {
-		if(pq.top() < nodeArray[j].begin) {
-			pq.pop();
+	auto cmp = [](pair<int, bool> &a, pair<int, bool> &b) { 
+		if (a.first < b.first) {
+			return true;
+		} else {
+			if (a.first == b.first) {
+				if (a.second && !b.second) {
+					return true;
+				} else if (!a.second && b.second) {
+					return false;
+				} else {
+					return false;
+				}
+			} else {
+				return false;
+			}
 		}
-		pq.push(nodeArray[j].end);
+	};
+
+	for (int i = 0; i < 2*n; i+= 2)
+	{
+		int begin = in;
+		int end = in;
+		times[i] = make_pair(begin, true);
+		times[i+1] = make_pair(end, false);
 	}
 
-	printf("%lu\n", pq.size());
+	sort(times, times + 2*n, cmp);
 
+	int max = 0;
+	int places = 0;
 
-	// for (int j = 1; j < n; j++)
-	// {
-	// 	bool gefunden = false;
+	for (int j = 0; j < 2 * n; j++) {
+		if (times[j].second) {
+			places++;
+			if (places > max) {
+				max = places;
+			}
+		} else {
+			places--;
+		}
+	}
 
-	// 	// printf("size: %lu\n", raumMap.size());
-	// 	for (int i = 0; i < raum.size(); i++)
-	// 	{
-	// 		printf("if: %d > %d\n", nodeArray[j].begin, raum[i]);
-	// 		if (nodeArray[j].begin > raum[i])
-	// 		{
-	// 			raum[i] = nodeArray[j].end;
-	// 			gefunden = true;
-	// 			break;
-	// 		}
-	// 	}
-
-	// 	if (!gefunden)
-	// 	{
-	// 		raum.push_back(nodeArray[j].end);
-	// 		// raum[raum.size()] = nodeArray[j].end;
-	// 	}
-	// }
-
-	// // printf("\n");
-	// printf("%lu\n", raum.size());
+	printf("%d\n", max);
 }
