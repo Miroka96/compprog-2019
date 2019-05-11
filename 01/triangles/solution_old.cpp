@@ -103,11 +103,11 @@ int main(int argc, char* argv[]) {
             debug(secondc);
             ulong sum = first + isecond->first;
             debug(sum);
-                auto third = numberCounts.find(sum);
-                if (third != numberCounts.end()) {
-                    resultCount += firstc * secondc * third->second;
-                    debug(resultCount);
-                }
+            auto third = numberCounts.find(sum);
+            if (third != numberCounts.end()) {
+                resultCount += firstc * secondc * third->second;
+                debug(resultCount);
+            }
         }
     }
 
