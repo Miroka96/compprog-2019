@@ -70,8 +70,81 @@ inline void print(const char *str) {
 
 ////////////////////////////// Task ////////////////////////
 
+constexpr static int mod = 1000000007;
+
+template <typename R, typename T>
+inline R modpow(T base, T exp, const T& modulus) {
+  base %= modulus;
+  R result = 1;
+  while (exp > 0) {
+    if (exp & 1) result = (result * (R) base) % (R) modulus;
+    base = (((R) base) * (R) base) % (R)modulus;
+    exp >>= 1;
+  }
+  return result;
+}
+
+template <typename R, typename T>
+inline T mulpow(const T& a, const T& b, const T& modulus) {
+  return (((R) a) * ((R) b)) % ((R) modulus);
+}
+
+typedef uint64_t mul_t;
+
 int main(int argc, char *argv[]) {
   setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
+
+  short week_count;
+  readn(week_count);
+
+  vector<int> faculties = {};
+  faculties.push_back(1);
+
+  while(week_count--) {
+    int available_time;
+    readn(available_time);
+
+    faculties.reserve(available_time + 1);
+
+    char task_count;
+    readn(task_count);
+
+    int times[task_count];
+
+    int needed_time = 0;
+    rep(i, task_count) {
+      int t;
+      readn(t);
+      needed_time += t;
+      times[i] = t;
+    }
+
+    int time_left = available_time - needed_time;
+
+    int possibilities = 1;
+    
+    int faculty = faculties.back();
+    for(int t = faculties.size(); t <= available_time; t++) {
+      faculty = mulpow<mul_t>(faculty, t, mod);
+      faculties.push_back(faculty);
+    }
+
+    possibilities = faculties[available_time];
+
+    rep(i, task_count) {
+      int inverse = modpow<mul_t>(faculties[times[i]], mod - 2, mod);
+      possibilities = mulpow<mul_t>(possibilities, inverse, mod);
+    }
+
+    if (time_left > 1) {
+      int inverse = modpow<mul_t>(faculties[time_left], mod - 2, mod);
+      possibilities = mulpow<mul_t>(possibilities, inverse, mod);
+    }
+
+    write(possibilities);
+  }
+
+
 
   return 0;
 }

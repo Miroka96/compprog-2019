@@ -87,7 +87,7 @@ uint64_t prices[1000001];
 
 int main()
 {
-	auto in = Input(1 << 28);
+	auto in = Input(1 << 20);
 
 	int t = in; // length
 	int k = in; // angebote

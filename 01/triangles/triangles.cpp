@@ -21,7 +21,7 @@ using namespace std;
 ////////////////////////////// I/O /////////////////////////
 #define BASE 10
 #define OUTPUT_LENGTH 24
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 0x100000
 
 // buffer stdin
 char inputbuffer[BUFFER_SIZE];
