@@ -155,7 +155,11 @@ inline void print(const char *str) {
 ////////////////////////////// Task ////////////////////////
 
 int main(int argc, char *argv[]) {
-  setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
+	// disable for Angelika's Input
+  //setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
+
+	// disable for Mirko's Input
+	auto in = Input(1 << 28);
 
   return 0;
 }
