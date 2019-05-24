@@ -1,29 +1,65 @@
-testcompilec: compilec testc
+testcompile: compile test
 testcompilecpp: compilecpp testcpp
 
-compilec:
-	gcc -o cprogram solution.c
+test: testcpp
+compile: compilecpp
 
 compilecpp:
 	g++ -o cppprogram solution.cpp
-
-testc:
-	cat 1.in | ./cprogram | diff - 1.out
-	cat 2.in | ./cprogram | diff - 2.out
-	cat 3.in | ./cprogram | diff - 3.out
-	cat 4.in | ./cprogram | diff - 4.out
 
 testcpp:
 	cat 1.in | ./cppprogram | diff - 1.out
 	cat 2.in | ./cppprogram | diff - 2.out
 	cat 3.in | ./cppprogram | diff - 3.out
 	cat 4.in | ./cppprogram | diff - 4.out
+	cat 5.in | ./cppprogram | diff - 5.out
+	cat 6.in | ./cppprogram | diff - 6.out
+	cat 7.in | ./cppprogram | diff - 7.out
+	cat 8.in | ./cppprogram | diff - 8.out
+	cat 9.in | ./cppprogram | diff - 9.out
+	cat 10.in | ./cppprogram | diff - 10.out
+
+t1:
+	cat 1.in | ./cppprogram
+
+t2:
+	cat 2.in | ./cppprogram
+
+t3:
+	cat 3.in | ./cppprogram
+
+t4:
+	cat 4.in | ./cppprogram
+
+t5:
+	cat 5.in | ./cppprogram
+
+t6:
+	cat 6.in | ./cppprogram
+
+t7:
+	cat 7.in | ./cppprogram
+
+t8:
+	cat 8.in | ./cppprogram
+
+t9:
+	cat 9.in | ./cppprogram
+
+t10:
+	cat 10.in | ./cppprogram
 
 testp:
 	cat 1.in | ./solution.py | diff - 1.out
 	cat 2.in | ./solution.py | diff - 2.out
 	cat 3.in | ./solution.py | diff - 3.out
 	cat 4.in | ./solution.py | diff - 4.out
+	cat 5.in | ./solution.py | diff - 5.out
+	cat 6.in | ./solution.py | diff - 6.out
+	cat 7.in | ./solution.py | diff - 7.out
+	cat 8.in | ./solution.py | diff - 8.out
+	cat 9.in | ./solution.py | diff - 9.out
+	cat 10.in | ./solution.py | diff - 10.out
 
 clean:
-	rm cprogram
+	rm cppprogram
