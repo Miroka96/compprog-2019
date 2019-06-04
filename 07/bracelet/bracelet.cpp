@@ -102,7 +102,7 @@ struct Input
 ////////////////////////////// I/O /////////////////////////
 #define BASE 10
 #define OUTPUT_LENGTH 24
-#define BUFFER_SIZE 0x10000
+#define BUFFER_SIZE 0x100000
 
 // buffer stdin
 char inputbuffer[BUFFER_SIZE];
@@ -139,6 +139,9 @@ inline void print(const char *str) {
 ////////////////////////////// Task ////////////////////////
 
 #define max_colour_count 50
+#define max_beads_count 100000
+
+pair<char, int> result_list[max_beads_count+1] = {};
 
 int main(int argc, char *argv[]) {
 	// disable for Angelika's Input
@@ -175,8 +178,8 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	pair<char, int> result_list[beads_count+1] = {};
-	int colour_pointer[max_colour_count] = {};
+	//pair<char, int> result_list[beads_count+1] = {};
+	int colour_pointer[max_colour_count];
 	fill_n(colour_pointer, max_colour_count, -1);
 
 	rep(colour, max_colour_count) {
