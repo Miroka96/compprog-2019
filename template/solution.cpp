@@ -110,7 +110,7 @@ char inputbuffer[BUFFER_SIZE];
 template <typename T> inline void readn(T &x) {
   x = 0;
   bool neg = 0;
-  register T c = getchar_unlocked();
+  register char c = getchar_unlocked();
 
   if (c == '-')
     neg = 1, c = getchar_unlocked();

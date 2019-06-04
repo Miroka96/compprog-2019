@@ -143,7 +143,7 @@ template <typename T> inline void write(T n) {
   while (i >= 0)
     putchar_unlocked(outputbuffer[i--]);
 
-  putchar_unlocked('\n');
+  //putchar_unlocked('\n');
 }
 
 inline void print(const char *str) {
@@ -154,12 +154,92 @@ inline void print(const char *str) {
 
 ////////////////////////////// Task ////////////////////////
 
+struct member {
+	char age;
+	short skill;
+	int id;
+};
+
 int main(int argc, char *argv[]) {
 	// disable for Angelika's Input
-  //setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
+  setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
 
 	// disable for Mirko's Input
-	auto in = Input(1 << 28);
+	//auto in = Input(1 << 28);
+
+	int members_count, contest_count;
+	readn(members_count);
+	readn(contest_count);
+
+	struct member members[members_count];
+	rep(i, members_count) {
+		char age;
+		short skill;
+		readn(age);
+		readn(skill);
+		members[i] = member{age, skill, i + 1};
+	}
+
+	auto age_skill_cmp = [](const struct member& a, const struct member& b){
+		if (a.age != b.age) {
+			return a.age < b.age;
+		} else {
+			return a.skill < b.skill;
+		}
+	};
+
+	sort(members, members + members_count, age_skill_cmp);
+
+	auto age_cmp = [](const struct member& a, const struct member& b){
+		return a.age < b.age;
+	};
+
+	auto skill_age_cmp = [](const struct member& a, const struct member& b){
+		if (a.skill != b.skill) {
+			return a.skill > b.skill;
+		} else {
+			return a.age < b.age;
+		}
+	};
+
+	rep(i, contest_count) {
+		char min, max;
+		readn(min);
+		readn(max);
+		
+		const auto start = lower_bound(members, members + members_count, member{min, 0, 0}, age_cmp);
+		const auto end = upper_bound(start, members + members_count, member{max, 0, 0}, age_cmp);
+
+		int results[3];
+
+		int diff = end - start; 
+		if (diff < 3) {
+			write(-1);
+			putchar_unlocked('\n');
+			continue;
+		} else {
+			rep(res, 3){
+				member max_member = member{0,-1,-1};
+				for(auto it = start; it != end; it++) {
+					if(it->skill > max_member.skill) {
+						rep(j, res) {
+							if (results[j] == it->id) goto iterate_members;
+						} 
+						max_member = *it;
+					}
+					iterate_members:;
+				}
+				results[res] = max_member.id;
+			}
+		}
+
+		write(results[0]);
+		putchar_unlocked(' ');
+		write(results[1]);
+		putchar_unlocked(' ');
+		write(results[2]);
+		putchar_unlocked('\n');
+	}
 
   return 0;
 }

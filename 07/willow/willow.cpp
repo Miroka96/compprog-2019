@@ -109,17 +109,11 @@ char inputbuffer[BUFFER_SIZE];
 
 template <typename T> inline void readn(T &x) {
   x = 0;
-  bool neg = 0;
-  register T c = getchar_unlocked();
-
-  if (c == '-')
-    neg = 1, c = getchar_unlocked();
-
+  register char c;
+	for(c = getchar_unlocked(); c < '0' || c > '9'; c = getchar_unlocked());
+ 
   for (; c >= '0' && c <= '9'; c = getchar_unlocked())
     x = (x << 3) + (x << 1) + (c & 15);
-
-  if (neg)
-    x *= -1;
 }
 
 // create output buffer
@@ -154,12 +148,75 @@ inline void print(const char *str) {
 
 ////////////////////////////// Task ////////////////////////
 
+typedef int vertex_t;
+typedef int weight_t;
+typedef int path_weight_t;
+
 int main(int argc, char *argv[]) {
 	// disable for Angelika's Input
-  //setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
+  setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
 
 	// disable for Mirko's Input
-	auto in = Input(1 << 28);
+	//auto in = Input(1 << 28);
+
+	vertex_t node_count;
+	readn(node_count);
+
+	vector<pair<vertex_t, weight_t>> neighbors[node_count];
+	rep(i, node_count-1) {
+		vertex_t from;
+		vertex_t to;
+		weight_t dist;
+		readn(from);
+		readn(to);
+		readn(dist);
+		neighbors[from].push_back(make_pair(to, dist));
+		neighbors[to].push_back(make_pair(from, dist));
+	}
+
+	bool seen[node_count] = {};
+
+	//vector<pair<vertex_t, path_weight_t>> stack;
+	queue<pair<vertex_t, path_weight_t>> stack;
+	vertex_t farest_node = 0;
+	path_weight_t farest_distance = 0;
+	stack.push(make_pair(farest_node, farest_distance));
+
+	while(!stack.empty()) {
+		const auto& [node, dist] = stack.front();
+		stack.pop();
+		seen[node] = true;
+		if (dist > farest_distance) {
+			farest_distance = dist;
+			farest_node = node;
+		}
+		for(const auto& [child, child_dist] : neighbors[node]) {
+			if (seen[child]) continue;
+			stack.push(make_pair(child, dist + child_dist));
+		}
+	}
+
+	//stack.resize(0);
+	fill_n(seen, node_count, false);
+	farest_distance = 0;
+	stack.push(make_pair(farest_node, farest_distance));
+
+	while(!stack.empty()) {
+		const auto& [node, dist] = stack.front();
+		stack.pop();
+		seen[node] = true;
+		if (dist > farest_distance) {
+			farest_distance = dist;
+		}
+		for(const auto& [child, child_dist] : neighbors[node]) {
+			if (seen[child]) {
+				continue;
+			}
+			stack.push(make_pair(child, dist + child_dist));
+		}
+	}
+
+	write(farest_distance);
 
   return 0;
 }
