@@ -41,11 +41,6 @@ struct Input {
       buf++;
   }
 
-  operator char() {
-    skip_space();
-    return *buf++;
-  }
-
   operator bool() {
     skip_space();
     return *buf++ != '0';
@@ -143,21 +138,21 @@ constexpr char age_span = max_age - min_age + 1;
 
 int main(int argc, char *argv[]) {
   // disable for Angelika's Input
-  setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
+  //setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
 
   // disable for Mirko's Input
-  // auto in = Input(1 << 28);
+  auto in = Input(1 << 24);
 
-  int members_count, contest_count;
-  readn(members_count);
-  readn(contest_count);
+  int members_count = in, contest_count = in;
+  //readn(members_count);
+  //readn(contest_count);
 
   struct member members[members_count];
   rep(i, members_count) {
-    char age;
-    short skill;
-    readn(age);
-    readn(skill);
+    char age = in;
+    short skill = (int) in;
+    //readn(age);
+    //readn(skill);
     members[i] = member{age, skill, i + 1};
   }
 
@@ -171,13 +166,17 @@ int main(int argc, char *argv[]) {
 
   sort(members, members + members_count, age_skill_cmp);
 
+  int id_to_index[members_count + 1];
+  id_to_index[0] = -1;
+  rep(i, members_count) { id_to_index[members[i].id] = i; }
+
   int st[max_age + 3 - min_age];
   int en[max_age + 2 - min_age];
   int *starts = st - min_age + 1;
   int *ends = en - min_age + 1;
 
   char age = min_age - 1;
-	for (; age < members[0].age; age++) {
+  for (; age < members[0].age; age++) {
     ends[age] = 0;
     starts[age + 1] = 0;
   }
@@ -201,27 +200,26 @@ int main(int argc, char *argv[]) {
     const int &start = starts[age];
     const int &end = ends[age];
 
-    struct member recent_results[3] = {};
+		short result_skills[3] = {};
+		int result_ids[3] = {};
     for (int m = start; m < end; m++) {
       const struct member &member = members[m];
-      for (int i = 0; i < 3; i++) {
-        struct member &result_member = recent_results[i];
-        if (member.skill > result_member.skill ||
-            member.skill == result_member.skill &&
-                result_member.id > member.id) {
+      rep(i, 3) {
+        if (member.skill > result_skills[i] ||
+            member.skill == result_skills[i] &&
+                result_ids[i] > member.id) {
           for (int j = 2; j > i; j--) {
-            recent_results[j] = recent_results[j - 1];
+            result_skills[j] = result_skills[j - 1];
+						result_ids[j] = result_ids[j - 1];
           }
-          result_member = member;
+          result_ids[i] = member.id;
+					result_skills[i] = member.skill;
           break;
         }
       }
     }
     rep(i, 3) {
-      if (recent_results[i].age == 0)
-        break;
-			// TODO this id should be the id in the sorted members list
-      results[age][age][i] = recent_results[i].id;
+      results[age][age][i] = result_ids[i];
     }
   }
 
@@ -229,49 +227,63 @@ int main(int argc, char *argv[]) {
     for (char min = min_age; min <= max_age - diff; min++) {
       char max = min + diff;
 
-      const int *max_results = results[min + diff][max];
-      const int *min_results = results[min][max - diff];
+			const int *min_results = results[min][max - 1];
+      const int *max_results = results[min + 1][max];
+      int *result_vector = results[min][max];
 
       int min_id = 0;
       int max_id = 0;
 
       rep(i, 3) {
-        const struct member &min_member = members[min_results[min_id]];
-        const struct member &max_member = members[max_results[max_id]];
+        int min_index = id_to_index[min_results[min_id]];
+        int max_index = id_to_index[max_results[max_id]];
+        if (min_index > -1 && max_index > -1) {
+          const struct member &min_member = members[min_index];
+          const struct member &max_member = members[max_index];
 
-				if (min_member.id == max_member.id) {
-					if (min_member.skill == 0) {
-						break;
-					} else {
-						min_id++;
-						max_id++;
-						results[min+diff][max-diff][i] = min_member.id;
-						continue;
+          if (min_member.id == max_member.id) {
+            min_id++;
+            max_id++;
+            result_vector[i] = min_member.id;
+            continue;
+          }
+
+          if (min_member.skill > max_member.skill ||
+              min_member.skill == max_member.skill &&
+                  min_member.id < max_member.id) {
+            min_id++;
+            result_vector[i] = min_member.id;
+          } else {
+            max_id++;
+            result_vector[i] = max_member.id;
+          }
+        } else {
+					for (; min_index > -1 && i < 3; i++, min_index = id_to_index[min_results[++min_id]]) {
+						result_vector[i] = members[min_index].id;
 					}
-				}
 
-        if (min_member.skill > max_member.skill ||
-            min_member.skill == max_member.skill &&
-						min_member.id < max_member.id) {
-							min_id++;
-							results[min+diff][max-diff][i] = min_member.id;
-						} else {
-							max_id++;
-							results[min+diff][max-diff][i] = max_member.id;
-						}
+					for (; max_index > -1 && i < 3; i++, max_index = id_to_index[max_results[++max_id]]) {
+						result_vector[i] = members[max_index].id;
+					}
+
+					for (; i < 3; i++) {
+						result_vector[i] = 0;
+					}
+					break;
+				}
       }
     }
   }
 
   rep(i, contest_count) {
-    char min, max;
-    readn(min);
-    readn(max);
+    char min = in, max = in;
+    //readn(min);
+    //readn(max);
 
-		if (ends[max] - starts[min] < 3) {
-			print("-1\n");
-			continue;
-		}
+    if (ends[max] - starts[min] < 3) {
+      print("-1\n");
+      continue;
+    }
 
     int *contest_results = results[min][max];
 
