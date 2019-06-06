@@ -149,17 +149,16 @@ struct node *planets;
 struct district {
   int planet_count;
   char company;
-  vector<int> neighbors;
+  vector<int> children; // other districts
 };
 
 vector<struct district> districts = {};
 
-int* dfs(int parent_id, const int grand_parent_level,
-         const int grand_parent_district_ids[2], const char edge_company) {
+void planet_dfs(const int &parent_id, const int &grand_parent_id,
+         const int grand_parent_district_ids[2], const char &edge_company) {
 	struct node &parent = planets[parent_id];
+  int parent_districts[2];
 
-// should be given as return parameter
-	int parent_districts[2];
 	rep(company, 2) {
 		if (company == edge_company) {
 			int district_id = grand_parent_district_ids[company];
@@ -170,7 +169,6 @@ int* dfs(int parent_id, const int grand_parent_level,
 				struct district new_district;
 				new_district.planet_count = 1;
 				new_district.company = company;
-				new_district.neighbors.push_back(parent_id);
 				parent_districts[company] = districts.size();
 				districts.push_back(new_district);
 			} else {
@@ -179,17 +177,38 @@ int* dfs(int parent_id, const int grand_parent_level,
 		}
 	}
 
+  if (parent_districts[0] > -1 && parent_districts[1] > -1 && edge_company > -1) {
+    if (grand_parent_district_ids[edge_company] > -1) {
+      districts[grand_parent_district_ids[edge_company]].children.push_back(parent_districts[(edge_company + 1) % 2]);
+    } 
+  }
+  
+
   rep(company, 2) {
     for (const int &child_id : parent.neighbors[company]) {
       struct node &child = planets[child_id];
-      if (grand_parent_level != child.level) {
+      if (grand_parent_id != child_id) {
         child.level = parent.level + 1;
       } else {
 				continue;
 			}
-      dfs(child_id, parent.level, parent_districts, company);
+      planet_dfs(child_id, parent_id, parent_districts, company);
     }
   }
+}
+
+uint64_t district_dfs(const int &district_id) {
+  const struct district district = districts[district_id];
+  uint64_t res = 0;
+  res += district.planet_count * (district.planet_count - 1);
+
+  for (const int child_district_id : district.children) {
+    const struct district &child_district = districts[child_district_id];
+    assert(child_district.company != district.company);
+    res += (district.planet_count - 1) * (child_district.planet_count - 1);
+    res += district_dfs(child_district_id);
+  }
+  return res;
 }
 
 int main(int argc, char *argv[]) {
@@ -217,42 +236,9 @@ int main(int argc, char *argv[]) {
   }
 
 	int initial_parent_district_ids[2] = {-1, -1};
-  dfs(planets[0], -1, initial_parent_district_ids);
+  planet_dfs(0, -1, initial_parent_district_ids, -1);
 
-  // node, children_id
-  stack<pair<int, int>> dfs;
-  dfs.push(make_pair(0, 0));
-
-  while (!dfs.empty()) {
-    auto &[node_id, children_id] = dfs.top();
-    struct node &parent = planets[node_id];
-
-    if (children_id < parent.neighbors.size()) {
-      const auto &[company, child_id] = parent.neighbors[children_id];
-      struct node &child = planets[child_id];
-      if (child.level < parent.level) {
-        // found parent
-        children_id++;
-        continue;
-      }
-
-      if (child.neighbors.size() == 1) {
-        // only parent
-        parent.reachable_nodes[company]++;
-        if (company)
-      }
-    }
-
-    struct node &recent = planets[bfs.front()];
-    bfs.pop();
-    for (const auto &[ignore, child_id] : recent.neighbors) {
-      struct node &child = planets[child_id];
-      if (child.level < recent.level)
-        continue;
-      child.level = recent.level + 1;
-      bfs.push(child_id);
-    }
-  }
+  write(district_dfs(0));
 
   return 0;
 }
