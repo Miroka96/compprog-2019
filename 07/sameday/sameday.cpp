@@ -87,7 +87,7 @@ struct Input {
 ////////////////////////////// I/O /////////////////////////
 #define BASE 10
 #define OUTPUT_LENGTH 24
-#define BUFFER_SIZE 0x10000
+#define BUFFER_SIZE 0x1000000
 
 // buffer stdin
 char inputbuffer[BUFFER_SIZE];
@@ -154,35 +154,34 @@ struct district {
 
 vector<struct district> districts = {};
 
-void planet_dfs(const int &parent_id, const int &grand_parent_id,
-         const int grand_parent_district_ids[2], const char &edge_company) {
-	struct node &parent = planets[parent_id];
+void planet_dfs_rec(const int &parent_id, const int &grand_parent_id,
+                    const int grand_parent_district_ids[2],
+                    const char &edge_company) {
+  struct node &parent = planets[parent_id];
   int parent_districts[2];
 
-	rep(company, 2) {
-		if (company == edge_company) {
-			int district_id = grand_parent_district_ids[company];
-			parent_districts[company] = district_id;
-			districts[district_id].planet_count++;
-		} else {
-			if (parent.neighbors[company].size() > 0) {
-				struct district new_district;
-				new_district.planet_count = 1;
-				new_district.company = company;
-				parent_districts[company] = districts.size();
-				districts.push_back(new_district);
-			} else {
-				parent_districts[company] = -1;
-			}
-		}
-	}
-
-  if (parent_districts[0] > -1 && parent_districts[1] > -1 && edge_company > -1) {
-    if (grand_parent_district_ids[edge_company] > -1) {
-      districts[grand_parent_district_ids[edge_company]].children.push_back(parent_districts[(edge_company + 1) % 2]);
-    } 
+  rep(company, 2) {
+    if (company == edge_company) {
+      int district_id = grand_parent_district_ids[company];
+      parent_districts[company] = district_id;
+      districts[district_id].planet_count++;
+    } else {
+      if (parent.neighbors[company].size() > 0) {
+        struct district new_district;
+        new_district.planet_count = 1;
+        new_district.company = company;
+        parent_districts[company] = districts.size();
+        districts.push_back(new_district);
+      } else {
+        parent_districts[company] = -1;
+      }
+    }
   }
-  
+
+  if (parent_districts[0] > -1 && parent_districts[1] > -1) {
+    districts[grand_parent_district_ids[edge_company]].children.push_back(
+        parent_districts[(edge_company + 1) % 2]);
+  }
 
   rep(company, 2) {
     for (const int &child_id : parent.neighbors[company]) {
@@ -190,25 +189,60 @@ void planet_dfs(const int &parent_id, const int &grand_parent_id,
       if (grand_parent_id != child_id) {
         child.level = parent.level + 1;
       } else {
-				continue;
-			}
-      planet_dfs(child_id, parent_id, parent_districts, company);
+        continue;
+      }
+      planet_dfs_rec(child_id, parent_id, parent_districts, company);
     }
   }
 }
 
-uint64_t district_dfs(const int &district_id) {
+void planet_dfs(const int &root_id) {
+  struct node &root = planets[root_id];
+  int parent_districts[2];
+
+  rep(company, 2) {
+    if (root.neighbors[company].size() > 0) {
+      struct district new_district;
+      new_district.planet_count = 1;
+      new_district.company = company;
+      parent_districts[company] = districts.size();
+      districts.push_back(new_district);
+    } else {
+      parent_districts[company] = -1;
+    }
+  }
+
+  rep(company, 2) {
+    for (const int &child_id : root.neighbors[company]) {
+      struct node &child = planets[child_id];
+      child.level = root.level + 1;
+      planet_dfs_rec(child_id, root_id, parent_districts, company);
+    }
+  }
+}
+
+uint64_t district_dfs_rec(const int &district_id) {
   const struct district district = districts[district_id];
   uint64_t res = 0;
   res += district.planet_count * (district.planet_count - 1);
 
   for (const int child_district_id : district.children) {
     const struct district &child_district = districts[child_district_id];
-    assert(child_district.company != district.company);
+    //assert(child_district.company != district.company);
     res += (district.planet_count - 1) * (child_district.planet_count - 1);
-    res += district_dfs(child_district_id);
+    res += district_dfs_rec(child_district_id);
   }
   return res;
+}
+
+uint64_t district_dfs(const int &root_id) {
+	const struct node root = planets[root_id];
+	if (!root.neighbors[0].empty() && !root.neighbors[1].empty()) {
+		return district_dfs_rec(0) + district_dfs_rec(1) + 
+		(districts[0].planet_count - 1) * (districts[1].planet_count - 1);
+	} else {
+		return district_dfs_rec(0);
+	}
 }
 
 int main(int argc, char *argv[]) {
@@ -235,8 +269,7 @@ int main(int argc, char *argv[]) {
     planets[b].neighbors[company].push_back(a);
   }
 
-	int initial_parent_district_ids[2] = {-1, -1};
-  planet_dfs(0, -1, initial_parent_district_ids, -1);
+  planet_dfs(0);
 
   write(district_dfs(0));
 
