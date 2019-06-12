@@ -213,12 +213,12 @@ template <typename T, typename P = int> struct BTNode {
 
   P max_below(vector<BTNode<T, P>> &tree, const T &k) {
     if (key < k) {
-      P m = 0;
-      if (left != 0) {
-        m = tree[left].max_value;
+      P m = 1;
+      if (left != -1) {
+        m += tree[left].max_value;
       }
       if (right != -1) {
-        return max(tree[right].max_below(tree, k), value);
+        m += tree[right].max_below(tree, k);
       }
       return max(m, value);
     } else {
@@ -232,12 +232,12 @@ template <typename T, typename P = int> struct BTNode {
 
   P max_above(vector<BTNode<T, P>> &tree, const T &k) {
     if (k < key) {
-      P m = 0;
-      if (left != 0) {
-        m = tree[left].max_above(tree, k);
+      P m = 1;
+      if (left != -1) {
+        m += tree[left].max_above(tree, k);
       }
       if (right != -1) {
-        return max(tree[right].max_value, value);
+        m += tree[right].max_value;
       }
       return max(m, value);
     } else {
@@ -270,28 +270,30 @@ int main(int argc, char *argv[]) {
     // below, above
     pair<short, short> max_amounts[values_count];
 
+    uint values[values_count];
     uint value;
     readn(value);
+    values[0] = value;
     left_tree.push_back(BTNode<uint, short>::makeBTNode(value));
     max_amounts[0].first = 0;
 
     for (int i = 1; i < values_count; i++) {
       readn(value);
+      values[i] = value;
 
       short max_below = left_tree[0].max_below(left_tree, value);
       max_amounts[i].first = max_below;
       left_tree[0].insert(left_tree, value, max_below);
     }
 
-    right_tree.push_back(BTNode<uint, short>::makeBTNode(value));
+    right_tree.push_back(BTNode<uint, short>::makeBTNode(values[values_count - 1]));
     max_amounts[values_count - 1].second = 0;
 
     for (int i = values_count - 2; i >= 0; i--) {
-      readn(value);
-
-      short max_above = right_tree[0].max_above(right_tree, value);
+      
+      short max_above = right_tree[0].max_above(right_tree, values[i]);
       max_amounts[i].second = max_above;
-      right_tree[0].insert(right_tree, value, max_above);
+      right_tree[0].insert(right_tree, values[i], max_above);
     }
 
     short max_amount = 0;
