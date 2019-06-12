@@ -138,56 +138,44 @@ template <typename T, typename P = int> struct BTNode {
     return {k, val, -1, -1, 1, val};
   }
 
-  // added, updated
-  tuple<bool, bool> insert(vector<BTNode<T, P>> &tree, const T &k,
-                           const P &val) {
+  // added
+  bool insert(vector<BTNode<T, P>> &tree, const T &k, const P &val) {
     bool added = false;
-    bool updated = false;
     if (key == k) {
-      if (val > max_value) {
-        max_value = val;
-        updated = true;
+      if (val > value) {
+        value = val;
+        max_value = max(max_value, val);
       }
     } else if (k < key) {
       if (left != -1) {
-        tie(added, updated) = tree[left].insert(tree, k, val);
+        added = tree[left].insert(tree, k, val);
         if (added) {
           size++;
-          if (updated) {
-            max_value = max(max_value, val);
-          }
+          max_value = max(max_value, tree[left].max_value);
         }
       } else {
         left = tree.size();
         tree.push_back(makeBTNode(k, val));
-        if (val > max_value) {
-          max_value = val;
-          updated = true;
-        }
         size++;
+        max_value = max(max_value, val);
         added = true;
       }
     } else {
       if (right != -1) {
-        tie(added, updated) = tree[right].insert(tree, k, val);
+        added = tree[right].insert(tree, k, val);
         if (added) {
           size++;
-          if (updated) {
-            max_value = max(max_value, val);
-          }
+          max_value = max(max_value, tree[right].max_value);
         }
       } else {
         right = tree.size();
         tree.push_back(makeBTNode(k, val));
-        if (val > max_value) {
-          max_value = val;
-          updated = true;
-        }
         size++;
+        max_value = max(max_value, val);
         added = true;
       }
     }
-    return make_tuple(added, updated);
+    return added;
   }
 
   P values_below(vector<BTNode<T, P>> &tree, const T &k) {
@@ -213,41 +201,45 @@ template <typename T, typename P = int> struct BTNode {
 
   P max_below(vector<BTNode<T, P>> &tree, const T &k) {
     if (key < k) {
-      P m = 1;
-      if (left != -1) {
-        m += tree[left].max_value;
+      if (left != -1 && right != -1) {
+        return max(max(tree[left].max_value, tree[right].max_below(tree, k)),
+                   value);
+      } else if (left == -1 && right != -1) {
+        return max(tree[right].max_below(tree, k), value);
+      } else if (left != -1 && right == -1) {
+        return max(tree[left].max_value, value);
+      } else if (left == -1 && right == -1) {
+        return value;
       }
-      if (right != -1) {
-        m += tree[right].max_below(tree, k);
-      }
-      return max(m, value);
     } else {
       if (left != -1) {
         return tree[left].max_below(tree, k);
       } else {
-        return 0;
+        return -1;
       }
     }
   }
-
+/*
   P max_above(vector<BTNode<T, P>> &tree, const T &k) {
     if (k < key) {
-      P m = 1;
-      if (left != -1) {
-        m += tree[left].max_above(tree, k);
+      if (left != -1 && right != -1) {
+        return max(max(tree[left].max_above(tree, k), tree[right].max_value),
+                   value);
+      } else if (left == -1 && right != -1) {
+        return max(tree[right].max_value, value);
+      } else if (left != -1 && right == -1) {
+        return max(tree[left].max_above(tree, k), value);
+      } else if (left == -1 && right == -1) {
+        return value;
       }
-      if (right != -1) {
-        m += tree[right].max_value;
-      }
-      return max(m, value);
     } else {
       if (right != -1) {
         return tree[right].max_above(tree, k);
       } else {
-        return 0;
+        return -1;
       }
     }
-  }
+  }*/
 };
 
 int main(int argc, char *argv[]) {
@@ -267,7 +259,7 @@ int main(int argc, char *argv[]) {
     vector<BTNode<uint, short>> right_tree;
     right_tree.reserve(values_count);
 
-    // below, above
+    // left, right
     pair<short, short> max_amounts[values_count];
 
     uint values[values_count];
@@ -281,23 +273,24 @@ int main(int argc, char *argv[]) {
       readn(value);
       values[i] = value;
 
-      short max_below = left_tree[0].max_below(left_tree, value);
+      short max_below = left_tree[0].max_below(left_tree, value) + 1;
       max_amounts[i].first = max_below;
       left_tree[0].insert(left_tree, value, max_below);
     }
 
-    right_tree.push_back(BTNode<uint, short>::makeBTNode(values[values_count - 1]));
+    right_tree.push_back(
+        BTNode<uint, short>::makeBTNode(values[values_count - 1]));
     max_amounts[values_count - 1].second = 0;
 
     for (int i = values_count - 2; i >= 0; i--) {
-      
-      short max_above = right_tree[0].max_above(right_tree, values[i]);
-      max_amounts[i].second = max_above;
-      right_tree[0].insert(right_tree, values[i], max_above);
+      short max_below = right_tree[0].max_below(right_tree, values[i]) + 1;
+      max_amounts[i].second = max_below;
+      right_tree[0].insert(right_tree, values[i], max_below);
     }
 
     short max_amount = 0;
     rep(i, values_count) {
+      
       short amount = max_amounts[i].first + max_amounts[i].second + 1;
       if (amount > max_amount) {
         max_amount = amount;
