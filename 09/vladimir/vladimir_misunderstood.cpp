@@ -142,8 +142,8 @@ int main(int argc, char *argv[]) {
   for (int i = blocks_count - 1, j = 0; i >= 0; i--, j++) {
     int colour;
     readn(colour);
-    blocks_reverse[j] = colour;
-    blocks[i] = colour;
+    blocks_reverse[i] = colour;
+    blocks[j] = colour;
   }
 
   int relevant_count = (blocks_count) / 2;
