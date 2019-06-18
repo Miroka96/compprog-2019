@@ -88,34 +88,23 @@ struct Input {
 ////////////////////////////// I/O /////////////////////////
 #define BASE 10
 #define OUTPUT_LENGTH 24
-#define BUFFER_SIZE 0x10000
+#define BUFFER_SIZE 0x100000
 
 // buffer stdin
 char inputbuffer[BUFFER_SIZE];
 
 template <typename T> inline void readn(T &x) {
   x = 0;
-  bool neg = 0;
   register char c = getchar_unlocked();
-
-  if (c == '-')
-    neg = 1, c = getchar_unlocked();
 
   for (; c >= '0' && c <= '9'; c = getchar_unlocked())
     x = (x << 3) + (x << 1) + (c & 15);
-
-  if (neg)
-    x *= -1;
 }
 
 // create output buffer
 char outputbuffer[OUTPUT_LENGTH];
 
 template <typename T> inline void write(T n) {
-  bool neg = 0;
-  if (n < 0)
-    n *= -1, neg = 1;
-
   int i = 0;
   do {
     outputbuffer[i++] = n % 10 + '0';
@@ -123,13 +112,8 @@ template <typename T> inline void write(T n) {
   } while (n);
   --i;
 
-  if (neg)
-    putchar_unlocked('-');
-
   while (i >= 0)
     putchar_unlocked(outputbuffer[i--]);
-
-  putchar_unlocked('\n');
 }
 
 inline void print(const char *str) {
@@ -166,9 +150,11 @@ int main(int argc, char *argv[]) {
   }
 
   vector<int> campus_leaves;
-  vector<int> campus_sizes;
 
   bool seen[rooms_count] = {};
+
+  int largest_size = 0;
+  int largest_campus = -1;
 
   rep(root, rooms_count) {
     if (seen[root])
@@ -176,13 +162,14 @@ int main(int argc, char *argv[]) {
     seen[root] = true;
     int size = 0;
 
-    // node, distance
+    // node
     queue<int> bfs;
 
     int node_id = root;
     bfs.push(node_id);
     while (!bfs.empty()) {
-      tie(node_id) = bfs.front();
+      node_id = bfs.front();
+      bfs.pop();
       size++;
 
       for (int child_id : vertices[node_id]) {
@@ -194,9 +181,14 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    if (size > largest_size) {
+      largest_campus = campus_leaves.size();
+      largest_size = size;
+    }
     campus_leaves.push_back(node_id);
-    campus_sizes.push_back(size);
   }
+  write(campus_leaves.size() - 1);
+  putchar_unlocked(' ');
 
   int parents[rooms_count];
   fill_n(seen, rooms_count, false);
@@ -215,31 +207,91 @@ int main(int argc, char *argv[]) {
 
     while (!bfs.empty()) {
       tie(node_id, dist) = bfs.front();
+      bfs.pop();
 
       for (int child_id : vertices[node_id]) {
         if (seen[child_id])
           continue;
         seen[child_id] = true;
-		parents[child_id] = node_id;
+        parents[child_id] = node_id;
 
         bfs.push(make_pair(child_id, dist + 1));
       }
     }
-	// node_id is now the opposite leave of root
-	// dist is the diameter-1 of the tree
-	int steps_to_go_back = dist / 2;
-	int middle = node_id;
-	while(steps_to_go_back--) {
-		middle = parents[middle];
-	}
+    // node_id is now the opposite leave of root
+    // dist is the diameter-1 of the tree
+    int steps_to_go_back = dist / 2;
+    int middle = node_id;
+    while (steps_to_go_back--) {
+      middle = parents[middle];
+    }
 
-	campus_centres.push_back(middle);
+    campus_centres.push_back(middle);
   }
 
-  // find largest campus
-  // make it the central campus
-  // connect all other campus centres with the central campus centre
-  // run again two bfs to find diameter
+  vector<pair<int, int>> railway_connections;
+  railway_connections.reserve(campus_leaves.size() - 1);
+
+  for (int i = 0; i < campus_centres.size(); i++) {
+    if (i == largest_campus)
+      continue;
+    vertices[campus_centres[largest_campus]].push_back(campus_centres[i]);
+    vertices[campus_centres[i]].push_back(campus_centres[largest_campus]);
+
+    railway_connections.push_back(make_pair(campus_centres[largest_campus], campus_centres[i]));
+  }
+
+  fill_n(seen, rooms_count, false);
+
+  int node_id = 0;
+  {
+    // node
+    queue<int> bfs;
+
+    seen[0] = true;
+
+    bfs.push(node_id);
+
+    while (!bfs.empty()) {
+      node_id = bfs.front();
+      bfs.pop();
+
+      for (int child_id : vertices[node_id]) {
+        if (seen[child_id])
+          continue;
+        seen[child_id] = true;
+
+        bfs.push(child_id);
+      }
+    }
+  }
+  // node, distance
+  queue<pair<int, int>> bfs;
+  int dist = 0;
+  bfs.push(make_pair(node_id, dist));
+  seen[node_id] = false;
+
+  while (!bfs.empty()) {
+    tie(node_id, dist) = bfs.front();
+    bfs.pop();
+
+    for (int child_id : vertices[node_id]) {
+      if (!seen[child_id])
+        continue;
+      seen[child_id] = false;
+
+      bfs.push(make_pair(child_id, dist + 1));
+    }
+  }
+
+  write(dist);
+  putchar_unlocked('\n');
+  for (const auto &[a, b] : railway_connections) {
+    write(a + 1);
+    putchar_unlocked(' ');
+    write(b + 1);
+    putchar_unlocked('\n');
+  }
 
   return 0;
 }
