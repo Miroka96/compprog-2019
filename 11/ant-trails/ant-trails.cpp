@@ -140,12 +140,61 @@ inline void print(const char *str) {
 
 ////////////////////////////// Task ////////////////////////
 
+
 int main(int argc, char *argv[]) {
   // disable for Angelika's Input
   setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
 
   // disable for Mirko's Input
   //auto in = Input(1 << 28);
+
+  char test_count;
+  readn(test_count);
+
+  rep(test, test_count) {
+    char path_count;
+    char track_count;
+    readn(path_count);
+    readn(track_count);
+
+    // path, track, [ingoing, outgoing]
+    vector<tuple<char, char, char>> graph[path_count][track_count][2];
+    rep(path, path_count) {
+      rep(track, track_count) {
+        auto &outgoing = graph[path][track][1];
+        outgoing.reserve(4);
+        if (path - 1 >= 0) {
+          outgoing.push_back(make_tuple(path-1, track, 0));
+        }
+        if (path + 1 < path_count) {
+          outgoing.push_back(make_tuple(path+1, track, 0));
+        }
+        if (track - 1 >= 0) {
+          outgoing.push_back(make_tuple(path, track-1, 0));
+        }
+        if (track + 1 < track_count) {
+          outgoing.push_back(make_tuple(path, track+1, 0));
+        }
+        graph[path][track][0].push_back(make_tuple(path, track, 1));
+      }
+    }
+
+    short crossing_count;
+    readn(crossing_count);
+    tuple<char, char, char> crossings[crossing_count];
+    rep(crossing, crossing_count) {
+      char path;
+      char track;
+      readn(path);
+      readn(track);
+      graph[path][track][1].resize(0);
+      crossings[crossing] = make_tuple(path, track, 1);
+    }
+  }
+
+  // BFS von allen Crossings zum Rand und dabei Pfade invertieren.
+  // entweder es geht oder halt nicht
+
 
   return 0;
 }
