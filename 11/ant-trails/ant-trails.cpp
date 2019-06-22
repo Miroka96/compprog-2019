@@ -95,36 +95,23 @@ char inputbuffer[BUFFER_SIZE];
 
 template <typename T> inline void readn(T &x) {
   x = 0;
-  bool neg = 0;
-  register char c = getchar_unlocked();
-
-  if (c == '-')
-    neg = 1, c = getchar_unlocked();
+  register char c;
+  for (c = getchar_unlocked(); c < '0' || c > '9'; c = getchar_unlocked());
 
   for (; c >= '0' && c <= '9'; c = getchar_unlocked())
     x = (x << 3) + (x << 1) + (c & 15);
-
-  if (neg)
-    x *= -1;
 }
 
 // create output buffer
 char outputbuffer[OUTPUT_LENGTH];
 
 template <typename T> inline void write(T n) {
-  bool neg = 0;
-  if (n < 0)
-    n *= -1, neg = 1;
-
   int i = 0;
   do {
     outputbuffer[i++] = n % 10 + '0';
     n /= 10;
   } while (n);
   --i;
-
-  if (neg)
-    putchar_unlocked('-');
 
   while (i >= 0)
     putchar_unlocked(outputbuffer[i--]);
@@ -140,6 +127,18 @@ inline void print(const char *str) {
 
 ////////////////////////////// Task ////////////////////////
 
+struct node_t {
+  char path;
+  char track;
+  char out;
+};
+
+inline bool equal(const node_t &a, const node_t &b) {
+  if (a.path != b.path) return false;
+  if (a.track != b.track) return false;
+  if (a.out != b.out) return false;
+  return true;
+}
 
 int main(int argc, char *argv[]) {
   // disable for Angelika's Input
@@ -157,39 +156,103 @@ int main(int argc, char *argv[]) {
     readn(path_count);
     readn(track_count);
 
-    // path, track, [ingoing, outgoing]
-    vector<tuple<char, char, char>> graph[path_count][track_count][2];
+    vector<node_t> graph[path_count][track_count][2];
     rep(path, path_count) {
       rep(track, track_count) {
-        auto &outgoing = graph[path][track][1];
+        vector<node_t> &outgoing = graph[path][track][1];
         outgoing.reserve(4);
         if (path - 1 >= 0) {
-          outgoing.push_back(make_tuple(path-1, track, 0));
+          outgoing.push_back(node_t{path-1, track, 0});
         }
         if (path + 1 < path_count) {
-          outgoing.push_back(make_tuple(path+1, track, 0));
+          outgoing.push_back(node_t{path+1, track, 0});
         }
         if (track - 1 >= 0) {
-          outgoing.push_back(make_tuple(path, track-1, 0));
+          outgoing.push_back(node_t{path, track-1, 0});
         }
         if (track + 1 < track_count) {
-          outgoing.push_back(make_tuple(path, track+1, 0));
+          outgoing.push_back(node_t{path, track+1, 0});
         }
-        graph[path][track][0].push_back(make_tuple(path, track, 1));
+        graph[path][track][0].push_back(node_t{path, track, 1});
       }
     }
 
     short crossing_count;
     readn(crossing_count);
-    tuple<char, char, char> crossings[crossing_count];
+    vector<node_t> crossings;
+    crossings.reserve(crossing_count);
+
     rep(crossing, crossing_count) {
       char path;
       char track;
       readn(path);
       readn(track);
-      graph[path][track][1].resize(0);
-      crossings[crossing] = make_tuple(path, track, 1);
+      path--;
+      track--;
+      graph[path][track][0].resize(0);
+      if (0 < path && path < path_count - 1 && 0 < track && track < track_count - 1) {
+        crossings.push_back(node_t{path, track, 1});
+      }
     }
+
+    node_t parents[path_count][track_count][2];
+
+    for (node_t &source : crossings) {
+      queue<node_t> bfs;
+      bool seen[path_count][track_count][2] = {};
+
+      node_t exit;
+      bool found_path = false;
+      parents[source.path][source.track][source.out] = source;
+
+      seen[source.path][source.track][source.out] = true;
+      bfs.push(source);
+      
+      while(!bfs.empty()) {
+        node_t &parent = bfs.front();
+        
+        for(node_t &child : graph[parent.path][parent.track][parent.out]) {
+          if (seen[child.path][child.track][child.out]) {
+            continue;
+          }
+          parents[child.path][child.track][child.out] = parent;
+          if (child.out == 1 && (child.path == 0 || child.path == path_count - 1 || child.track == 0 || child.track == track_count - 1)) {
+            exit = child;
+            found_path = true;
+            goto found_border;
+          }
+          seen[child.path][child.track][child.out] = true;
+          bfs.push(child);
+        }
+        
+        bfs.pop();
+      }
+      found_border:
+
+      if (found_path) {
+        while (!equal(parents[exit.path][exit.track][exit.out], exit)) {
+          node_t &parent = parents[exit.path][exit.track][exit.out];
+
+          auto &children = graph[parent.path][parent.track][parent.out];
+          auto it = children.cbegin();
+          do {
+            if (equal(*it, exit)) {
+              children.erase(it);
+              break;
+            }
+          } while(++it != children.cend());
+
+          graph[exit.path][exit.track][exit.out].push_back(parent);
+
+          exit = parent;
+        }
+      } else {
+        print("not possible\n");
+        goto next_test;
+      }
+    }
+    print("possible\n");
+    next_test:;
   }
 
   // BFS von allen Crossings zum Rand und dabei Pfade invertieren.
