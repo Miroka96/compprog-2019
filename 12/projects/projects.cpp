@@ -11,79 +11,8 @@
 // print a debug string
 #define debugs(str) // clog << str << endl
 #define rep(a, b) for (int a = 0; a < (b); ++a)
-#define repd(a, b) for (int a = 0; a < (b); debug(++a))
-#define all(a) (a).begin(), (a).end()
 
 using namespace std;
-
-////////////////////// Angelika's Input ////////////////////
-
-struct Input {
-  char *buf;
-
-  Input(size_t size) : buf((char *)malloc(size)) {
-    ios_base::sync_with_stdio(0);
-    cin.tie(0);
-    cout.precision(10);
-
-    char *start = buf;
-    int n = 0;
-    do {
-      buf += n;
-      n = read(STDIN_FILENO, buf, size);
-    } while (n > 0);
-    assert(buf <= start + size);
-    buf = start;
-  }
-
-  void skip_space() {
-    while (*buf <= ' ')
-      buf++;
-  }
-
-  operator char() {
-    skip_space();
-    return *buf++;
-  }
-
-  operator bool() {
-    skip_space();
-    return *buf++ != '0';
-  }
-
-  operator char *() {
-    skip_space();
-    char *s = buf;
-    while (*buf++ > ' ')
-      ;
-    buf[-1] = '\0';
-    return s;
-  }
-
-  operator float() { return (double)*this; }
-
-  operator double() {
-    char *s = *this;
-    return atof(s);
-  }
-
-  template <typename T> operator T() {
-    skip_space();
-    T n = 0;
-    char c = *buf++;
-    bool neg = c == '-';
-    if (neg)
-      c = *buf++;
-    while (c > ' ') {
-      n *= 10;
-      n += c - '0';
-      c = *buf++;
-    }
-    if (neg)
-      n = -n;
-    return n;
-  }
-};
 
 ////////////////////////////// I/O /////////////////////////
 #define BASE 10
@@ -132,11 +61,7 @@ struct edge {
 };
 
 int main(int argc, char *argv[]) {
-  // disable for Angelika's Input
   setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
-
-  // disable for Mirko's Input
-  // auto in = Input(1 << 28);
 
   uint8_t students_count;
   readn(students_count);
@@ -147,16 +72,20 @@ int main(int argc, char *argv[]) {
   uint8_t students_per_project;
   readn(students_per_project);
 
-  vector<edge> graph[students_count + projects_count] = {};
+  const uint8_t node_count = students_count + projects_count;
 
-  uint8_t project_priorities[projects_count] = {};
+  vector<edge> graph[node_count] = {};
 
+  uint8_t project_priorities[projects_count];
+  uninitialized_fill_n(project_priorities, projects_count, 0);
+
+  // read student priorities
   rep(student, students_count) {
     uint8_t student_id;
     readn(student_id);
 
     for (int priority = 1; priority <= priorities_count; priority++) {
-      uint8_t project_id;
+      uint8_t project_id; // 0-initialized
       readn(project_id);
       project_priorities[project_id] = priority;
       edge e;
@@ -180,8 +109,11 @@ int main(int argc, char *argv[]) {
   }
 
   uint8_t project_capacities[projects_count];
-  fill_n(project_capacities, projects_count, students_per_project);
+  uninitialized_fill_n(project_capacities, projects_count,
+                       students_per_project);
 
+  // choose for all students the first available project, going through the
+  // projects in decreasing priority (increasing costs)
   rep(student, students_count) {
     // all projects sorted by priority
     // at least one directly reaches the sink
@@ -193,6 +125,7 @@ int main(int argc, char *argv[]) {
       project_capacities[project]--;
       project_edge.capacity--;
 
+      // add reverse edge
       edge e;
       e.to = student;
       e.capacity = 1;
@@ -207,106 +140,68 @@ int main(int argc, char *argv[]) {
     // lets see, which negative circles exist
     found_neg_circle = false;
     // propagate costs n-1 times
-    int costs[students_count + projects_count] = {};
-    rep(iteration, students_count + projects_count - 1) {
-      rep(vertex, students_count + projects_count) {
-        const int &recent_costs = costs[vertex];
+    int costs[node_count];
+    uninitialized_fill_n(costs, node_count, 0);
 
+    uint8_t last_decreased_vertex;
+    uint8_t parents[node_count];
+    uninitialized_fill_n(parents, node_count, 255);
+    rep(iteration, node_count) {
+      last_decreased_vertex = 255;
+      rep(vertex, node_count) {
+        const int &recent_costs = costs[vertex];
         for (edge &child_edge : graph[vertex]) {
           if (child_edge.capacity == 0)
             continue;
-          int possible_costs = recent_costs + child_edge.costs;
+          const int possible_costs = recent_costs + child_edge.costs;
           if (possible_costs < costs[child_edge.to]) {
             costs[child_edge.to] = possible_costs;
+            last_decreased_vertex = child_edge.to;
+            parents[child_edge.to] = vertex;
           }
         }
       }
     }
 
-    vector<uint8_t> circle_sources;
-    uint8_t parents[students_count + projects_count];
-    int best_costs[students_count + projects_count];
-    rep(i, students_count + projects_count) {
-        parents[i] = i;
-        best_costs[i] = costs[i];
+    if (last_decreased_vertex != 255) {
+      found_neg_circle = true;
+
+      uint8_t vertex_on_circle = last_decreased_vertex;
+      rep(i, node_count) { vertex_on_circle = parents[vertex_on_circle]; }
+
+      vector<uint8_t> circle;
+      for (uint8_t vertex = vertex_on_circle;
+           vertex != vertex_on_circle || circle.size() == 0;
+           vertex = parents[vertex]) {
+        circle.push_back(vertex);
       }
 
-    rep(source, students_count + projects_count) {
-      // vertex, costs
-      queue<pair<uint8_t, int>> bfs;
-      bool seen[students_count + projects_count] = {};
-      bfs.push(make_pair(source, costs[source]));
-
-      while (!bfs.empty()) {
-        const auto [parent, cost] = bfs.front();
-        bfs.pop();
-        if (seen[parent]) continue;
-        seen[parent] = true;
-        if (cost > best_costs[parent])
-          continue;
-
-        for (const edge &child_edge : graph[parent]) {
-          if (child_edge.capacity == 0)
+      uint8_t child = circle[circle.size() - 1];
+      for(uint8_t parent : circle) {
+        edge *child_edge;
+        for (edge &e : graph[parent]) {
+          if (e.to != child)
             continue;
-          const int possible_costs = cost + child_edge.costs;
-          const uint8_t &child = child_edge.to;
-          const int &old_costs = best_costs[child];
-
-          if (possible_costs < old_costs) {
-            best_costs[child] = possible_costs;
-            parents[child_edge.to] = parent;
-            if (child == source) {
-              // found negative circle
-              found_neg_circle = true;
-              circle_sources.push_back(source);
-              goto next_source;
-            } else {
-              bfs.push(make_pair(child, possible_costs));
-            }
-          }
+          e.capacity--;
+          child_edge = &e;
+          break;
         }
-      }
-      next_source:;
-    }
-
-    bool seen[students_count + projects_count] = {};
-    for (const uint8_t &source : circle_sources) {
-      stack<uint8_t> circle;
-      uint8_t circle_node = source;
-      while (!seen[circle_node]) {
-        seen[circle_node] = true;
-        circle.push(circle_node);
-        circle_node = parents[circle_node];
-      }
-      if (circle.size() > 1 && parents[circle.top()] == source) {
-        // found circle
-        uint8_t parent = source;
-        while (!circle.empty()) {
-          uint8_t child = circle.top();
-          circle.pop();
-          edge *parent_edge;
-          for (edge &e : graph[parent]) {
-            if (e.to != child)
-              continue;
-            e.capacity--;
-            parent_edge = &e;
-          }
-          bool updated_child = false;
-          for (edge &e : graph[child]) {
-            if (e.to != parent)
-              continue;
-            e.capacity++;
-            updated_child = true;
-          }
-          if (!updated_child) {
-            edge child_edge;
-            child_edge.capacity = 1;
-            child_edge.to = parent;
-            child_edge.costs = -parent_edge->costs;
-            graph[child].push_back(child_edge);
-          }
-          parent = child;
+        bool updated_child = false;
+        for (edge &e : graph[child]) {
+          if (e.to != parent)
+            continue;
+          e.capacity++;
+          updated_child = true;
+          break;
         }
+        if (!updated_child) {
+          edge parent_edge;
+          parent_edge.capacity = 1;
+          parent_edge.to = parent;
+          parent_edge.costs = -child_edge->costs;
+          graph[child].push_back(parent_edge);
+        }
+        child = parent;
       }
     }
   } while (found_neg_circle);
