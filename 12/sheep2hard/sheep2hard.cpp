@@ -16,79 +16,10 @@
 
 using namespace std;
 
-////////////////////// Angelika's Input ////////////////////
-
-struct Input {
-  char *buf;
-
-  Input(size_t size) : buf((char *)malloc(size)) {
-    ios_base::sync_with_stdio(0);
-    cin.tie(0);
-    cout.precision(10);
-
-    char *start = buf;
-    int n = 0;
-    do {
-      buf += n;
-      n = read(STDIN_FILENO, buf, size);
-    } while (n > 0);
-    assert(buf <= start + size);
-    buf = start;
-  }
-
-  void skip_space() {
-    while (*buf <= ' ')
-      buf++;
-  }
-
-  operator char() {
-    skip_space();
-    return *buf++;
-  }
-
-  operator bool() {
-    skip_space();
-    return *buf++ != '0';
-  }
-
-  operator char *() {
-    skip_space();
-    char *s = buf;
-    while (*buf++ > ' ')
-      ;
-    buf[-1] = '\0';
-    return s;
-  }
-
-  operator float() { return (double)*this; }
-
-  operator double() {
-    char *s = *this;
-    return atof(s);
-  }
-
-  template <typename T> operator T() {
-    skip_space();
-    T n = 0;
-    char c = *buf++;
-    bool neg = c == '-';
-    if (neg)
-      c = *buf++;
-    while (c > ' ') {
-      n *= 10;
-      n += c - '0';
-      c = *buf++;
-    }
-    if (neg)
-      n = -n;
-    return n;
-  }
-};
-
 ////////////////////////////// I/O /////////////////////////
 #define BASE 10
 #define OUTPUT_LENGTH 24
-#define BUFFER_SIZE 0x10000
+#define BUFFER_SIZE 0x10000000
 
 // buffer stdin
 char inputbuffer[BUFFER_SIZE];
@@ -108,23 +39,24 @@ template <typename T> inline void readn(T &x) {
     x *= -1;
 }
 
+inline void skip() {
+  char c = getchar_unlocked();
+  if (c == '-')
+    c = getchar_unlocked();
+  for (; c >= '0' && c <= '9'; c = getchar_unlocked())
+    ;
+}
+
 // create output buffer
 char outputbuffer[OUTPUT_LENGTH];
 
 template <typename T> inline void write(T n) {
-  bool neg = 0;
-  if (n < 0)
-    n *= -1, neg = 1;
-
   int i = 0;
   do {
     outputbuffer[i++] = n % 10 + '0';
     n /= 10;
   } while (n);
   --i;
-
-  if (neg)
-    putchar_unlocked('-');
 
   while (i >= 0)
     putchar_unlocked(outputbuffer[i--]);
@@ -141,11 +73,84 @@ inline void print(const char *str) {
 ////////////////////////////// Task ////////////////////////
 
 int main(int argc, char *argv[]) {
-  // disable for Angelika's Input
   setvbuf(stdin, inputbuffer, _IOFBF, BUFFER_SIZE);
 
-  // disable for Mirko's Input
-  //auto in = Input(1 << 28);
+  int64_t area = 0;
+
+  int numbers_count;
+  readn(numbers_count);
+
+  int64_t x_old, y_old;
+  readn(x_old);
+  readn(y_old);
+  int64_t first_x, first_y;
+  first_x = x_old;
+  first_y = y_old;
+  int64_t x, y;
+  readn(x);
+  readn(y);
+
+  int i;
+  if (x == x_old) {
+    i = 1;
+    goto vertical;
+  } else {
+    i = 0;
+    goto horizontal;
+  }
+
+  for (; i < numbers_count - 1; i += 2) {
+    x_old = x;
+    skip();
+    readn(y);
+
+  vertical:
+    // same x
+    area += x * (y - y_old);
+
+    y_old = y;
+    readn(x);
+    skip();
+
+  horizontal:
+    // same y
+    area += y * (x_old - x);
+  }
+
+  if (i == numbers_count - 1) {
+    if (x == x_old) {
+      y_old = y;
+      readn(x);
+      skip();
+
+      // same y
+      area += y * (x_old - x);
+
+      // same x
+      area += x * (first_y - y);
+    } else {
+      x_old = x;
+      skip();
+      readn(y);
+
+      // same x
+      area += x * (y - y_old);
+
+      // same y
+      area += y * (x - first_x);
+    }
+  } else {
+    if (x == x_old) {
+      // same y
+      area += y * (x - first_x);
+    } else {
+      // same x
+      area += x * (first_y - y);
+    }
+  }
+  
+  if (area < 0) area *= -1;
+  write(area/2);
 
   return 0;
 }
