@@ -16,75 +16,6 @@
 
 using namespace std;
 
-////////////////////// Angelika's Input ////////////////////
-
-struct Input {
-  char *buf;
-
-  Input(size_t size) : buf((char *)malloc(size)) {
-    ios_base::sync_with_stdio(0);
-    cin.tie(0);
-    cout.precision(10);
-
-    char *start = buf;
-    int n = 0;
-    do {
-      buf += n;
-      n = read(STDIN_FILENO, buf, size);
-    } while (n > 0);
-    assert(buf <= start + size);
-    buf = start;
-  }
-
-  void skip_space() {
-    while (*buf <= ' ')
-      buf++;
-  }
-
-  operator char() {
-    skip_space();
-    return *buf++;
-  }
-
-  operator bool() {
-    skip_space();
-    return *buf++ != '0';
-  }
-
-  operator char *() {
-    skip_space();
-    char *s = buf;
-    while (*buf++ > ' ')
-      ;
-    buf[-1] = '\0';
-    return s;
-  }
-
-  operator float() { return (double)*this; }
-
-  operator double() {
-    char *s = *this;
-    return atof(s);
-  }
-
-  template <typename T> operator T() {
-    skip_space();
-    T n = 0;
-    char c = *buf++;
-    bool neg = c == '-';
-    if (neg)
-      c = *buf++;
-    while (c > ' ') {
-      n *= 10;
-      n += c - '0';
-      c = *buf++;
-    }
-    if (neg)
-      n = -n;
-    return n;
-  }
-};
-
 ////////////////////////////// I/O /////////////////////////
 #define BASE 10
 #define OUTPUT_LENGTH 24
@@ -213,7 +144,7 @@ int main(int argc, char *argv[]) {
   rep(a, players_count) {
     rep(b, players_count) {
       if (a == b) {
-        new_hole_differences[a][b] = -1;
+        new_hole_differences[a][b] = 0;
         continue;
       }
       int max_difference = 0; // of shots
@@ -225,98 +156,78 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  state best_parent_states[2 << (players_count - 1)];
-  for (state &s : best_parent_states) {
-    for (parent_state &p : s.parents) {
-      p.state = -1;
-      p.cost = -1;
-    }
-  }
+  vector<int> costs;
+  rep(final_player, players_count) {
 
-  if (holes_count > 1) {
-    // the first numbers have costs depending on the final outcome
-    // iterate the algorithm, but start with different initial costs each time
-  } else {
-    // the first numbers have no costs
-    rep(a, players_count) {
-      rep(b, players_count) {
-        best_parent_states[a].parents[b].cost = 0;
+    state best_parent_states[2 << (players_count - 1)];
+    for (state &s : best_parent_states) {
+      for (parent_state &p : s.parents) {
+        p.state = -1;
+        p.cost = -1;
       }
     }
-  }
 
-  for (uint32_t perm = permute(0, bitmask);
-       clean_permutation(perm, bitmask) != bitmask;
-       perm = permute(perm, bitmask)) {
-    uint32_t permutation = clean_permutation(perm, bitmask);
-    state &current_state = best_parent_states[permutation];
-    for (uint32_t current_mask = 1, current_player = 0;
-         current_player < players_count; current_mask <<= 1, current_player++) {
-      if ((permutation & current_mask) == 0) {
-        continue;
-      }
+    rep(first_player, players_count) {
+      best_parent_states[first_player + 1].parents[first_player].cost =
+          new_hole_differences[final_player][first_player];
+    }
 
-      uint16_t previous_permutation = permutation ^ current_mask;
-      state &previous_state = best_parent_states[previous_permutation];
+    uint32_t perm = 0;
+    rep(i, players_count) { perm = permute(perm, bitmask); }
+    do {
+      perm = permute(perm, bitmask);
+      uint32_t permutation = clean_permutation(perm, bitmask);
 
-      int best_cost = INT32_MAX;
-      uint16_t best_previous_player = -1;
-      for (uint16_t previous_mask = 1, previous_player = 0;
-           previous_player < players_count;
-           previous_mask <<= 1, previous_player++) {
-        if ((previous_permutation & previous_mask) == 0) {
+      state &current_state = best_parent_states[permutation];
+      for (uint32_t current_mask = 1, current_player = 0;
+           current_player < players_count;
+           current_mask <<= 1, current_player++) {
+        if ((permutation & current_mask) == 0) {
           continue;
         }
-        int possible_cost =
-            max(previous_state.parents[previous_player].cost,
-                hole_differences[previous_player][current_player]);
-        if (possible_cost < best_cost) {
-          best_cost = possible_cost;
-          best_previous_player = previous_player;
+
+        uint16_t previous_permutation = permutation ^ current_mask;
+        state &previous_state = best_parent_states[previous_permutation];
+
+        int best_cost = INT32_MAX;
+        uint16_t best_previous_player = -1;
+        for (uint16_t previous_mask = 1, previous_player = 0;
+             previous_player < players_count;
+             previous_mask <<= 1, previous_player++) {
+          if ((previous_permutation & previous_mask) == 0) {
+            continue;
+          }
+          int possible_cost =
+              max(previous_state.parents[previous_player].cost,
+                  hole_differences[previous_player][current_player]);
+          if (possible_cost < best_cost) {
+            best_cost = possible_cost;
+            best_previous_player = previous_player;
+          }
+        }
+        current_state.parents[current_player].state = previous_permutation;
+        if (best_previous_player != (uint16_t)-1) {
+          current_state.parents[current_player].cost = best_cost;
         }
       }
-      current_state.parents[current_player].state = previous_permutation;
-      if (best_previous_player != (uint16_t)-1) {
-        current_state.parents[current_player].cost = best_cost;
-      }
-    }
-  }
+    } while (clean_permutation(perm, bitmask) != bitmask);
 
-  state &current_state = best_parent_states[bitmask];
-  for (uint32_t mask = 1, player = 0; player < players_count;
-       mask <<= 1, player++) {
-    uint16_t previous_permutation = bitmask ^ mask;
-    state &previous_state = best_parent_states[previous_permutation];
-
-    int best_cost = INT32_MAX;
-    uint16_t best_previous_player = -1;
-    for (uint16_t previous_mask = 1, previous_player = 0;
-         previous_player < players_count;
-         previous_mask <<= 1, previous_player++) {
-      if ((previous_permutation & previous_mask) == 0) {
-        continue;
+    if (holes_count == 1) {
+      for (parent_state p : best_parent_states[bitmask].parents) {
+        if (p.state == (uint16_t)-1) {
+          continue;
+        }
+        costs.push_back(p.cost);
       }
-      int possible_cost = max(previous_state.parents[previous_player].cost,
-                              hole_differences[previous_player][player]);
-      if (possible_cost < best_cost) {
-        best_cost = possible_cost;
-        best_previous_player = previous_player;
-      }
-    }
-    current_state.parents[player].state = previous_permutation;
-    if (best_previous_player != (uint16_t)-1) {
-      current_state.parents[player].cost = best_cost;
+      break;
     } else {
-      current_state.parents[player].cost = 0;
+      costs.push_back(best_parent_states[bitmask].parents[final_player].cost);
     }
   }
 
   int best_cost = INT32_MAX;
-  for (parent_state p : best_parent_states[bitmask].parents) {
-    if (p.state == (uint16_t)-1) {
-      continue;
-    }
-    best_cost = min(best_cost, p.cost);
+  for (int cost : costs) {
+    best_cost = min(best_cost, cost);
   }
   write(best_cost);
 
